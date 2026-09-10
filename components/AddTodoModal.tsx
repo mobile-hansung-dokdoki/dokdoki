@@ -23,21 +23,24 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
   const [text, setText] = useState('');
   const inputRef = useRef<TextInput>(null);
 
+  // 모달이 열릴 때마다 입력창 초기화 후 자동 포커스
   useEffect(() => {
     if (visible) {
       setText('');
-      // 모달 애니메이션 후 포커스
+      // 슬라이드 애니메이션(300ms) 완료 후 키보드 올림
       const timer = setTimeout(() => inputRef.current?.focus(), 150);
       return () => clearTimeout(timer);
     }
   }, [visible]);
 
+  // 빈 입력 방어 후 부모에게 추가 요청
   const handleAdd = () => {
     if (!text.trim()) return;
     onAdd(text.trim());
     onClose();
   };
 
+  // 공백만 있는 경우 완료 버튼 비활성화
   const canAdd = text.trim().length > 0;
 
   return (
