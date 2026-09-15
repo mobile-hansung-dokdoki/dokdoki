@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { Todo, Filter, SortOrder } from '../types';
 import { formatDateKorean, fromDateString } from '../utils/date';
 
-// 시간 기반 고유 ID 생성 (nanoid 대신 외부 의존성 없이 사용)
 const generateId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -12,21 +11,16 @@ export function useTodos() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('createdDesc');
 
-  // 새 항목을 목록 맨 앞에 추가 (최신순 정렬)
   const addTodo = useCallback((text: string, dueDate?: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
     const now = Date.now();
-    const newTodo: Todo = {
-      id: generateId(),
-      text: text.trim(),
-      done: false,
-      dueDate,
-      createdAt: now,
-      updatedAt: now,
-    };
-    setTodos(prev => [newTodo, ...prev]);
+    setTodos(prev => [
+      { id: generateId(), text: trimmed, done: false, dueDate, createdAt: now, updatedAt: now },
+      ...prev,
+    ]);
   }, []);
 
-  // 완료 상태 토글 — 원본 배열을 직접 수정하지 않고 새 배열 반환 (불변성 유지)
   const toggleTodo = useCallback((id: string) => {
     setTodos(prev =>
       prev.map(todo =>
@@ -38,21 +32,19 @@ export function useTodos() {
   }, []);
 
   const editTodo = useCallback((id: string, text: string, dueDate?: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
     setTodos(prev =>
       prev.map(todo =>
-        todo.id === id
-          ? { ...todo, text: text.trim(), dueDate, updatedAt: Date.now() }
-          : todo
+        todo.id === id ? { ...todo, text: trimmed, dueDate, updatedAt: Date.now() } : todo
       )
     );
   }, []);
 
-  // 해당 id 항목 제거
   const deleteTodo = useCallback((id: string) => {
     setTodos(prev => prev.filter(todo => todo.id !== id));
   }, []);
 
-  // 상태 필터 + 검색어(텍스트·날짜) 순차 적용 후 정렬
   const filteredTodos = todos
     .filter(todo => {
       if (filter === 'active' && todo.done) return false;

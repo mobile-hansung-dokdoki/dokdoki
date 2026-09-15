@@ -30,7 +30,6 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(600)).current;
 
-  // Open: overlay 먼저 fade in → sheet slide up
   useEffect(() => {
     if (visible) {
       setText('');
@@ -59,7 +58,6 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
     }
   }, [visible]);
 
-  // Close: sheet slide down → overlay fade out → 부모 콜백
   const handleClose = useCallback(() => {
     Animated.parallel([
       Animated.timing(sheetTranslateY, {
@@ -78,19 +76,19 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
     ]).start(() => onClose());
   }, [onClose, overlayOpacity, sheetTranslateY]);
 
+  const trimmedText = text.trim();
+  const canAdd = trimmedText.length > 0;
+
   const handleAdd = () => {
-    if (!text.trim()) return;
-    onAdd(text.trim(), dueDate);
+    if (!canAdd) return;
+    onAdd(trimmedText, dueDate);
     handleClose();
   };
-
-  const canAdd = text.trim().length > 0;
 
   const dateLabel = dueDate
     ? formatDateKorean(fromDateString(dueDate))
     : '날짜 없음';
 
-  // 오늘 기준 상대 표시 — 날짜 미선택이면 숏컷 버튼이므로 '오늘' 고정
   const relativeLabel = dueDate ? relativeDays(dueDate) : '오늘';
 
   return (
