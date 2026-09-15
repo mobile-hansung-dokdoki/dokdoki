@@ -1,0 +1,17 @@
+export const Colors = {
+  primary:        '#1E4D2B',
+  primaryLight:   '#2D6A3F',
+  background:     '#F2F1ED',
+  surface:        '#FFFFFF',
+  textPrimary:    '#1A1A1A',
+  textSecondary:  '#888888',
+  textDisabled:   '#BBBBBB',
+  danger:         '#EF4444',
+  warning:        '#D97706',
+  warningBg:      '#FEF3C7',
+  border:         '#E5E7EB',
+  overlay:        'rgba(0,0,0,0.4)',
+  tabActiveBg:    '#1E4D2B',
+  tabActiveText:  '#FFFFFF',
+  tabInactiveText:'#888888',
+} as const;
