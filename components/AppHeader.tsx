@@ -3,12 +3,15 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
+import { formatTime } from '../utils/date';
 
 type SyncStatus = 'synced' | 'offline' | 'none';
 
 interface AppHeaderProps {
   syncStatus?: SyncStatus;
+  lastSyncAt?: number;
   onSettingsPress?: () => void;
+  onCalendarPress?: () => void;
 }
 
 const BADGE_CONFIG = {
@@ -16,22 +19,30 @@ const BADGE_CONFIG = {
   offline: { icon: 'cloud-offline-outline',   label: '오프라인',  color: Colors.warning },
 } as const;
 
-export default function AppHeader({ syncStatus = 'none', onSettingsPress }: AppHeaderProps) {
+export default function AppHeader({ syncStatus = 'none', lastSyncAt, onSettingsPress, onCalendarPress }: AppHeaderProps) {
   const config = syncStatus !== 'none' ? BADGE_CONFIG[syncStatus] : null;
 
   return (
     <View style={styles.container}>
       <View>
-        <Text style={styles.title}>할 일 앱</Text>
+        <Text style={styles.title}>똑똑이</Text>
         <Text style={styles.subtitle}>스마트한 하루 정리</Text>
       </View>
       <View style={styles.right}>
         {config && (
           <View style={styles.badge}>
             <Ionicons name={config.icon} size={14} color={config.color} />
-            <Text style={[styles.badgeText, { color: config.color }]}>{config.label}</Text>
+            <Text style={[styles.badgeText, { color: config.color }]}>
+              {config.label}
+              {syncStatus === 'synced' && lastSyncAt
+                ? ` ${formatTime(new Date(lastSyncAt))}`
+                : ''}
+            </Text>
           </View>
         )}
+        <TouchableOpacity onPress={onCalendarPress} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Ionicons name="calendar-outline" size={20} color={Colors.textSecondary} />
+        </TouchableOpacity>
         <TouchableOpacity onPress={onSettingsPress} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
         </TouchableOpacity>

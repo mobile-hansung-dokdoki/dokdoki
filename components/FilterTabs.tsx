@@ -7,15 +7,16 @@ import { Spacing } from '../constants/spacing';
 interface FilterTabsProps {
   activeFilter: Filter;
   onFilterChange: (filter: Filter) => void;
+  doneCount: number;
 }
 
-const TABS: { label: string; value: Filter }[] = [
-  { label: '전체', value: 'all' },
-  { label: '진행중', value: 'active' },
-  { label: '완료', value: 'done' },
-];
+export default function FilterTabs({ activeFilter, onFilterChange, doneCount }: FilterTabsProps) {
+  const TABS: { label: string; value: Filter }[] = [
+    { label: '전체', value: 'all' },
+    { label: '진행중', value: 'active' },
+    { label: `완료 ${doneCount}`, value: 'done' },
+  ];
 
-export default function FilterTabs({ activeFilter, onFilterChange }: FilterTabsProps) {
   return (
     <View style={styles.wrapper}>
       <View style={styles.row}>
@@ -47,14 +48,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     backgroundColor: Colors.border,
-    borderRadius: 10,
+    borderRadius: 50,
     padding: 3,
+    gap: 2,
   },
   tab: {
     flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 50,
   },
   tabActive: {
     backgroundColor: Colors.tabActiveBg,
