@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -9,53 +9,102 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
+import { formatDateKorean, fromDateString, todayString, addDays, relativeDays } from '../utils/date';
 
 interface AddTodoModalProps {
   visible: boolean;
   onClose: () => void;
-  onAdd: (text: string) => void;
+  onAdd: (text: string, dueDate?: string) => void;
 }
 
 export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalProps) {
   const [text, setText] = useState('');
+  const [dueDate, setDueDate] = useState<string | undefined>(undefined);
   const inputRef = useRef<TextInput>(null);
 
-  // 모달이 열릴 때마다 입력창 초기화 후 자동 포커스
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(600)).current;
+
+  // Open: overlay 먼저 fade in → sheet slide up
   useEffect(() => {
     if (visible) {
       setText('');
-      // 슬라이드 애니메이션(300ms) 완료 후 키보드 올림
-      const timer = setTimeout(() => inputRef.current?.focus(), 150);
-      return () => clearTimeout(timer);
+      setDueDate(undefined);
+      overlayOpacity.setValue(0);
+      sheetTranslateY.setValue(600);
+
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.delay(80),
+          Animated.timing(sheetTranslateY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start(() => {
+        const timer = setTimeout(() => inputRef.current?.focus(), 50);
+        return () => clearTimeout(timer);
+      });
     }
   }, [visible]);
 
-  // 빈 입력 방어 후 부모에게 추가 요청
+  // Close: sheet slide down → overlay fade out → 부모 콜백
+  const handleClose = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(sheetTranslateY, {
+        toValue: 600,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.sequence([
+        Animated.delay(100),
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => onClose());
+  }, [onClose, overlayOpacity, sheetTranslateY]);
+
   const handleAdd = () => {
     if (!text.trim()) return;
-    onAdd(text.trim());
-    onClose();
+    onAdd(text.trim(), dueDate);
+    handleClose();
   };
 
-  // 공백만 있는 경우 완료 버튼 비활성화
   const canAdd = text.trim().length > 0;
 
+  const dateLabel = dueDate
+    ? formatDateKorean(fromDateString(dueDate))
+    : '날짜 없음';
+
+  // 오늘 기준 상대 표시 — 날짜 미선택이면 숏컷 버튼이므로 '오늘' 고정
+  const relativeLabel = dueDate ? relativeDays(dueDate) : '오늘';
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      {/* 딤 배경 — 누르면 닫힘 */}
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay} />
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+      <TouchableWithoutFeedback onPress={handleClose}>
+        <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]} />
       </TouchableWithoutFeedback>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.kvView}
       >
+        <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
         <View style={styles.sheet}>
-          {/* 핸들 */}
           <View style={styles.handle} />
 
           <Text style={styles.title}>할 일 추가하기</Text>
@@ -72,8 +121,44 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
             maxLength={100}
           />
 
+          <View style={styles.dateRow}>
+            <TouchableOpacity
+              onPress={() => setDueDate(d => addDays(d ?? todayString(), -1))}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+
+            <Text style={[styles.dateLabel, !dueDate && styles.dateLabelEmpty]}>
+              {dateLabel}
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => setDueDate(d => addDays(d ?? todayString(), 1))}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.todayBtn, relativeLabel !== '오늘' && styles.todayBtnRelative]}
+              onPress={() => setDueDate(todayString())}
+            >
+              <Text style={styles.todayBtnText}>{relativeLabel}</Text>
+            </TouchableOpacity>
+
+            {dueDate && (
+              <TouchableOpacity
+                onPress={() => setDueDate(undefined)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle" size={18} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           <View style={styles.buttons}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
               <Text style={styles.cancelText}>취소</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -86,6 +171,7 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
             </TouchableOpacity>
           </View>
         </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -93,7 +179,11 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: Colors.overlay,
   },
   kvView: {
@@ -133,6 +223,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     backgroundColor: Colors.background,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dateLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.textPrimary,
+  },
+  dateLabelEmpty: {
+    color: Colors.textSecondary,
+  },
+  todayBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    minWidth: 52,
+    alignItems: 'center',
+  },
+  todayBtnRelative: {
+    backgroundColor: Colors.primaryLight,
+  },
+  todayBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   buttons: {
     flexDirection: 'row',

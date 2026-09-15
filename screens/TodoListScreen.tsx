@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, FlatList, SafeAreaView, StyleSheet } from 'react-native';
+import { View, FlatList, SafeAreaView, StyleSheet, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useTodos } from '../hooks/useTodos';
 import AppHeader from '../components/AppHeader';
 import FilterTabs from '../components/FilterTabs';
@@ -7,19 +7,29 @@ import EmptyState from '../components/EmptyState';
 import TodoItem from '../components/TodoItem';
 import BottomBar from '../components/BottomBar';
 import AddTodoModal from '../components/AddTodoModal';
+import EditTodoModal from '../components/EditTodoModal';
+import CalendarSheet from '../components/CalendarSheet';
 import SettingsScreen from './SettingsScreen';
+import SearchBar from '../components/SearchBar';
 import { Colors } from '../constants/colors';
 
 export default function TodoListScreen() {
-  const { filteredTodos, filter, setFilter, addTodo, toggleTodo, deleteTodo } = useTodos();
+  const { todos, filteredTodos, doneCount, filter, setFilter, searchQuery, setSearchQuery, sortOrder, setSortOrder, addTodo, toggleTodo, editTodo, deleteTodo } = useTodos();
   const [modalVisible, setModalVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<import('../types').Todo | null>(null);
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.root}>
       <SafeAreaView style={styles.safeArea}>
-        <AppHeader onSettingsPress={() => setSettingsVisible(true)} />
-        <FilterTabs activeFilter={filter} onFilterChange={setFilter} />
+        <AppHeader
+          onSettingsPress={() => setSettingsVisible(true)}
+          onCalendarPress={() => setCalendarVisible(true)}
+        />
+        <FilterTabs activeFilter={filter} onFilterChange={setFilter} doneCount={doneCount} />
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} sortOrder={sortOrder} onSortChange={setSortOrder} />
 
         {filteredTodos.length === 0 ? (
           <EmptyState />
@@ -31,12 +41,15 @@ export default function TodoListScreen() {
               <TodoItem
                 todo={item}
                 onToggle={toggleTodo}
+                onEdit={setEditingTodo}
                 onDelete={deleteTodo}
               />
             )}
             style={styles.list}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
           />
         )}
 
@@ -51,11 +64,23 @@ export default function TodoListScreen() {
         onClose={() => setModalVisible(false)}
         onAdd={addTodo}
       />
+      <EditTodoModal
+        visible={editingTodo !== null}
+        todo={editingTodo}
+        onClose={() => setEditingTodo(null)}
+        onEdit={editTodo}
+      />
+      <CalendarSheet
+        visible={calendarVisible}
+        onClose={() => setCalendarVisible(false)}
+        todos={todos}
+      />
       <SettingsScreen
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
       />
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
