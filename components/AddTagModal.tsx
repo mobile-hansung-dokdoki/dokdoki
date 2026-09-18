@@ -6,10 +6,13 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  ScrollView,
   StyleSheet,
   Animated,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Tag } from '../types';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { COLOR_PALETTE } from '../constants/tags';
@@ -18,22 +21,24 @@ interface AddTagModalProps {
   visible: boolean;
   onClose: () => void;
   onAdd: (label: string, color: string, bgColor: string) => void;
+  onDelete: (tagId: string) => void;
+  userTags: Tag[];
 }
 
-export default function AddTagModal({ visible, onClose, onAdd }: AddTagModalProps) {
+export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTags }: AddTagModalProps) {
   const [label, setLabel] = useState('');
   const [selectedColorIdx, setSelectedColorIdx] = useState(0);
   const inputRef = useRef<TextInput>(null);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const sheetTranslateY = useRef(new Animated.Value(400)).current;
+  const sheetTranslateY = useRef(new Animated.Value(500)).current;
 
   useEffect(() => {
     if (visible) {
       setLabel('');
       setSelectedColorIdx(0);
       overlayOpacity.setValue(0);
-      sheetTranslateY.setValue(400);
+      sheetTranslateY.setValue(500);
 
       Animated.parallel([
         Animated.timing(overlayOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -49,7 +54,7 @@ export default function AddTagModal({ visible, onClose, onAdd }: AddTagModalProp
 
   const handleClose = useCallback(() => {
     Animated.parallel([
-      Animated.timing(sheetTranslateY, { toValue: 400, duration: 240, useNativeDriver: true }),
+      Animated.timing(sheetTranslateY, { toValue: 500, duration: 240, useNativeDriver: true }),
       Animated.sequence([
         Animated.delay(80),
         Animated.timing(overlayOpacity, { toValue: 0, duration: 180, useNativeDriver: true }),
@@ -62,7 +67,8 @@ export default function AddTagModal({ visible, onClose, onAdd }: AddTagModalProp
     if (!trimmed) return;
     const { color, bgColor } = COLOR_PALETTE[selectedColorIdx];
     onAdd(trimmed, color, bgColor);
-    handleClose();
+    setLabel('');
+    setSelectedColorIdx(0);
   };
 
   const canAdd = label.trim().length > 0;
@@ -76,7 +82,39 @@ export default function AddTagModal({ visible, onClose, onAdd }: AddTagModalProp
 
       <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}>
         <View style={styles.handle} />
-        <Text style={styles.title}>태그 추가</Text>
+        <Text style={styles.title}>태그 관리</Text>
+
+        {/* 기존 태그 목록 */}
+        {userTags.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>등록된 태그</Text>
+            <ScrollView
+              style={styles.tagList}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {userTags.map(tag => (
+                <View key={tag.id} style={styles.tagRow}>
+                  <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
+                    <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => onDelete(tag.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <View style={styles.divider} />
+
+        {/* 새 태그 추가 */}
+        <Text style={styles.sectionLabel}>새 태그 추가</Text>
 
         {/* 미리보기 */}
         <View style={styles.previewRow}>
@@ -93,7 +131,7 @@ export default function AddTagModal({ visible, onClose, onAdd }: AddTagModalProp
           style={styles.input}
           value={label}
           onChangeText={setLabel}
-          placeholder="태그 이름"
+          placeholder="태그 이름 (최대 10자)"
           placeholderTextColor={Colors.textSecondary}
           returnKeyType="done"
           onSubmitEditing={handleAdd}
@@ -101,7 +139,6 @@ export default function AddTagModal({ visible, onClose, onAdd }: AddTagModalProp
         />
 
         {/* 색상 팔레트 */}
-        <Text style={styles.sectionLabel}>색상 선택</Text>
         <View style={styles.palette}>
           {COLOR_PALETTE.map((c, idx) => (
             <TouchableOpacity
@@ -115,9 +152,7 @@ export default function AddTagModal({ visible, onClose, onAdd }: AddTagModalProp
               activeOpacity={0.7}
             >
               <View style={[styles.colorDot, { backgroundColor: c.color }]} />
-              {selectedColorIdx === idx && (
-                <View style={styles.selectedRing} />
-              )}
+              {selectedColorIdx === idx && <View style={styles.selectedRing} />}
             </TouchableOpacity>
           ))}
         </View>
@@ -125,7 +160,7 @@ export default function AddTagModal({ visible, onClose, onAdd }: AddTagModalProp
         {/* 버튼 */}
         <View style={styles.buttons}>
           <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
-            <Text style={styles.cancelText}>취소</Text>
+            <Text style={styles.cancelText}>닫기</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
@@ -156,7 +191,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenHorizontal,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 40 : 28,
-    gap: 16,
+    gap: 14,
+    maxHeight: '85%',
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
@@ -169,8 +205,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textPrimary,
   },
+  section: {
+    gap: 10,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  tagList: {
+    maxHeight: 140,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  tagChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 50,
+  },
+  tagChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: -2,
+  },
   previewRow: {
     alignItems: 'flex-start',
+    marginBottom: -4,
   },
   previewChip: {
     paddingHorizontal: 12,
@@ -190,12 +260,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     backgroundColor: Colors.background,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-    marginBottom: -8,
   },
   palette: {
     flexDirection: 'row',

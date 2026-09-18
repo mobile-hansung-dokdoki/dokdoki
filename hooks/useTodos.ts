@@ -53,6 +53,11 @@ export function useTodos() {
     setUserTags(prev => [...prev, { id, label, color, bgColor }]);
   }, []);
 
+  const deleteUserTag = useCallback((tagId: string) => {
+    setUserTags(prev => prev.filter(t => t.id !== tagId));
+    setActiveTags(prev => prev.filter(t => t !== tagId));
+  }, []);
+
   const toggleActiveTag = useCallback((tagId: TagId) => {
     setActiveTags(prev =>
       prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
@@ -105,6 +110,7 @@ export function useTodos() {
     userTags,
     tagMap,
     addUserTag,
+    deleteUserTag,
     addTodo,
     toggleTodo,
     editTodo,
