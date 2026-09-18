@@ -12,6 +12,8 @@ interface AppHeaderProps {
   lastSyncAt?: number;
   onSettingsPress?: () => void;
   onCalendarPress?: () => void;
+  doneCount?: number;
+  totalCount?: number;
 }
 
 const BADGE_CONFIG = {
@@ -19,14 +21,20 @@ const BADGE_CONFIG = {
   offline: { icon: 'cloud-offline-outline',   label: '오프라인',  color: Colors.warning },
 } as const;
 
-export default function AppHeader({ syncStatus = 'none', lastSyncAt, onSettingsPress, onCalendarPress }: AppHeaderProps) {
+export default function AppHeader({ syncStatus = 'none', lastSyncAt, onSettingsPress, onCalendarPress, doneCount = 0, totalCount = 0 }: AppHeaderProps) {
   const config = syncStatus !== 'none' ? BADGE_CONFIG[syncStatus] : null;
+  const rate = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
   return (
     <View style={styles.container}>
       <View>
         <Text style={styles.title}>똑똑이</Text>
         <Text style={styles.subtitle}>스마트한 하루 정리</Text>
+        {totalCount > 0 && (
+          <Text style={styles.progress}>
+            {totalCount}개 중 {doneCount}개 완료 · {rate}%
+          </Text>
+        )}
       </View>
       <View style={styles.right}>
         {config && (
@@ -70,6 +78,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 2,
+  },
+  progress: {
+    fontSize: 12,
+    color: Colors.primary,
+    marginTop: 3,
+    fontWeight: '500',
   },
   right: {
     flexDirection: 'row',

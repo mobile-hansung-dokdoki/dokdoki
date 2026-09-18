@@ -44,6 +44,8 @@ export default function TodoListScreen() {
           <AppHeader
             onSettingsPress={() => setSettingsVisible(true)}
             onCalendarPress={() => setCalendarVisible(true)}
+            doneCount={doneCount}
+            totalCount={todos.length}
           />
           <FilterTabs activeFilter={filter} onFilterChange={setFilter} doneCount={doneCount} />
           <TagFilter
