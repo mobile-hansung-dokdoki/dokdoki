@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   ScrollView,
+  Keyboard,
   StyleSheet,
   Animated,
   Platform,
@@ -80,31 +81,33 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
 
       <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}>
         <View style={styles.handle} />
-        <ScrollView
-          keyboardShouldPersistTaps="always"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
+        <View style={styles.content}>
           <Text style={styles.title}>태그 관리</Text>
 
           {/* 기존 태그 목록 */}
           {userTags.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>등록된 태그</Text>
-              {userTags.map(tag => (
-                <View key={tag.id} style={styles.tagRow}>
-                  <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
-                    <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+              <ScrollView
+                style={styles.tagList}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {userTags.map(tag => (
+                  <View key={tag.id} style={styles.tagRow}>
+                    <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
+                      <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => onDelete(tag.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => onDelete(tag.id)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-              ))}
+                ))}
+              </ScrollView>
             </View>
           )}
 
@@ -147,7 +150,7 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
                     { backgroundColor: c.color },
                     isSelected && styles.colorCircleSelected,
                   ]}
-                  onPress={() => setSelectedColorIdx(idx)}
+                  onPress={() => { Keyboard.dismiss(); setSelectedColorIdx(idx); }}
                   activeOpacity={0.75}
                 >
                   {isSelected && (
@@ -172,7 +175,7 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
               <Text style={styles.confirmText}>추가</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
+        </View>
       </Animated.View>
     </Modal>
   );
