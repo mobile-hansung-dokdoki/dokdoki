@@ -31,9 +31,14 @@ export default function AppHeader({ syncStatus = 'none', lastSyncAt, onSettingsP
         <Text style={styles.title}>똑똑이</Text>
         <Text style={styles.subtitle}>스마트한 하루 정리</Text>
         {totalCount > 0 && (
-          <Text style={styles.progress}>
-            {totalCount}개 중 {doneCount}개 완료 · {rate}%
-          </Text>
+          <View style={styles.progressWrapper}>
+            <Text style={styles.progress}>
+              {totalCount}개 중 {doneCount}개 완료 · {rate}%
+            </Text>
+            <View style={styles.barTrack}>
+              <View style={[styles.barFill, { width: `${rate}%` }]} />
+            </View>
+          </View>
         )}
       </View>
       <View style={styles.right}>
@@ -79,11 +84,26 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
   },
+  progressWrapper: {
+    marginTop: 5,
+    gap: 4,
+  },
   progress: {
     fontSize: 12,
     color: Colors.primary,
-    marginTop: 3,
     fontWeight: '500',
+  },
+  barTrack: {
+    width: 140,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.primary,
   },
   right: {
     flexDirection: 'row',
