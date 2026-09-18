@@ -156,10 +156,12 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
   const [dragInfo, setDragInfo] = useState<{ fromIndex: number; toIndex: number } | null>(null);
 
   useEffect(() => {
-    const sub = Keyboard.addListener('keyboardDidHide', () => {
-      setIsInputFocused(false);
-    });
-    return () => sub.remove();
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setIsInputFocused(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setIsInputFocused(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
   }, []);
   const dragY = useRef(new Animated.Value(0)).current;
   const dragScale = useRef(new Animated.Value(1)).current;
@@ -262,16 +264,18 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.kvView}
       >
-        <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
+        <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}>
+          <View style={styles.handleContainer}>
+            <View style={styles.handle} />
+          </View>
           <ScrollView
-            style={styles.sheet}
+            style={styles.sheetScroll}
             contentContainerStyle={styles.sheetContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="always"
             bounces={false}
           >
-            <View style={styles.handle} />
-            <Text style={styles.title}>태그 관리</Text>
+            {!isInputFocused && <Text style={styles.title}>태그 관리</Text>}
 
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>등록된 태그</Text>
@@ -349,8 +353,6 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
               placeholderTextColor={Colors.textSecondary}
               returnKeyType="done"
               onSubmitEditing={handleAdd}
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
               maxLength={10}
             />
 
@@ -413,18 +415,25 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: SCREEN_HEIGHT * 0.92,
+    overflow: 'hidden',
   },
-  sheetContent: {
-    paddingHorizontal: Spacing.screenHorizontal,
+  handleContainer: {
+    alignItems: 'center',
     paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 28,
-    gap: 14,
+    paddingBottom: 6,
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
     backgroundColor: Colors.border,
-    alignSelf: 'center',
-    marginBottom: 4,
+  },
+  sheetScroll: {
+    flexShrink: 1,
+  },
+  sheetContent: {
+    paddingHorizontal: Spacing.screenHorizontal,
+    paddingTop: 4,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+    gap: 14,
   },
   title: {
     fontSize: 17,

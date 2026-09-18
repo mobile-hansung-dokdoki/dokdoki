@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "test-todo",
-    "slug": "test-todo",
+    "name": "Doki doki todo",
+    "slug": "doki-doki-todo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
