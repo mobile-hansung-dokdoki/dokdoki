@@ -80,17 +80,17 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
 
       <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}>
         <View style={styles.handle} />
-        <Text style={styles.title}>태그 관리</Text>
+        <ScrollView
+          keyboardShouldPersistTaps="always"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.title}>태그 관리</Text>
 
-        {/* 기존 태그 목록 */}
-        {userTags.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>등록된 태그</Text>
-            <ScrollView
-              style={styles.tagList}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
+          {/* 기존 태그 목록 */}
+          {userTags.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>등록된 태그</Text>
               {userTags.map(tag => (
                 <View key={tag.id} style={styles.tagRow}>
                   <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
@@ -105,74 +105,74 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
                   </TouchableOpacity>
                 </View>
               ))}
-            </ScrollView>
+            </View>
+          )}
+
+          <View style={styles.divider} />
+
+          {/* 새 태그 추가 */}
+          <Text style={styles.sectionLabel}>새 태그 추가</Text>
+
+          {/* 미리보기 */}
+          <View style={styles.previewRow}>
+            <View style={[styles.previewChip, { backgroundColor: previewBg }]}>
+              <Text style={[styles.previewChipText, { color: previewColor }]}>
+                {label.trim() || '태그명'}
+              </Text>
+            </View>
           </View>
-        )}
 
-        <View style={styles.divider} />
+          {/* 태그명 입력 */}
+          <TextInput
+            ref={inputRef}
+            style={styles.input}
+            value={label}
+            onChangeText={setLabel}
+            placeholder="태그 이름 (최대 10자)"
+            placeholderTextColor={Colors.textSecondary}
+            returnKeyType="done"
+            onSubmitEditing={handleAdd}
+            maxLength={10}
+          />
 
-        {/* 새 태그 추가 */}
-        <Text style={styles.sectionLabel}>새 태그 추가</Text>
-
-        {/* 미리보기 */}
-        <View style={styles.previewRow}>
-          <View style={[styles.previewChip, { backgroundColor: previewBg }]}>
-            <Text style={[styles.previewChipText, { color: previewColor }]}>
-              {label.trim() || '태그명'}
-            </Text>
+          {/* 색상 팔레트 */}
+          <View style={styles.palette}>
+            {COLOR_PALETTE.map((c, idx) => {
+              const isSelected = selectedColorIdx === idx;
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.colorCircle,
+                    { backgroundColor: c.color },
+                    isSelected && styles.colorCircleSelected,
+                  ]}
+                  onPress={() => setSelectedColorIdx(idx)}
+                  activeOpacity={0.75}
+                >
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        </View>
 
-        {/* 태그명 입력 */}
-        <TextInput
-          ref={inputRef}
-          style={styles.input}
-          value={label}
-          onChangeText={setLabel}
-          placeholder="태그 이름 (최대 10자)"
-          placeholderTextColor={Colors.textSecondary}
-          returnKeyType="done"
-          onSubmitEditing={handleAdd}
-          maxLength={10}
-        />
-
-        {/* 색상 팔레트 */}
-        <View style={styles.palette}>
-          {COLOR_PALETTE.map((c, idx) => {
-            const isSelected = selectedColorIdx === idx;
-            return (
-              <TouchableOpacity
-                key={idx}
-                style={[
-                  styles.colorCircle,
-                  { backgroundColor: c.color },
-                  isSelected && styles.colorCircleSelected,
-                ]}
-                onPress={() => setSelectedColorIdx(idx)}
-                activeOpacity={0.75}
-              >
-                {isSelected && (
-                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* 버튼 */}
-        <View style={styles.buttons}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
-            <Text style={styles.cancelText}>닫기</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
-            onPress={handleAdd}
-            activeOpacity={0.8}
-            disabled={!canAdd}
-          >
-            <Text style={styles.confirmText}>추가</Text>
-          </TouchableOpacity>
-        </View>
+          {/* 버튼 */}
+          <View style={styles.buttons}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
+              <Text style={styles.cancelText}>닫기</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
+              onPress={handleAdd}
+              activeOpacity={0.8}
+              disabled={!canAdd}
+            >
+              <Text style={styles.confirmText}>추가</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </Animated.View>
     </Modal>
   );
@@ -193,7 +193,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenHorizontal,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 40 : 28,
-    gap: 14,
     maxHeight: '85%',
   },
   handle: {
@@ -207,6 +206,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textPrimary,
   },
+  scrollContent: {
+    gap: 14,
+    paddingBottom: 8,
+  },
   section: {
     gap: 10,
   },
@@ -214,9 +217,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: Colors.textSecondary,
-  },
-  tagList: {
-    maxHeight: 140,
   },
   tagRow: {
     flexDirection: 'row',
