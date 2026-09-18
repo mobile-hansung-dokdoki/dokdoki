@@ -85,30 +85,32 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
         {/* 기존 태그 목록 */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>등록된 태그</Text>
-          {userTags.length === 0 ? (
-            <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
-          ) : (
-            <ScrollView
-              style={styles.tagList}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              {userTags.map(tag => (
-                <View key={tag.id} style={styles.tagRow}>
-                  <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
-                    <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+          <View style={styles.tagListContainer}>
+            {userTags.length === 0 ? (
+              <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
+            ) : (
+              <ScrollView
+                style={styles.tagList}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {userTags.map(tag => (
+                  <View key={tag.id} style={styles.tagRow}>
+                    <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
+                      <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => onDelete(tag.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => onDelete(tag.id)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          )}
+                ))}
+              </ScrollView>
+            )}
+          </View>
         </View>
 
         <View style={styles.divider} />
@@ -213,8 +215,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textSecondary,
   },
+  tagListContainer: {
+    height: 135,
+  },
   tagList: {
-    maxHeight: 140,
+    flex: 1,
   },
   emptyText: {
     fontSize: 13,
