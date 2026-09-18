@@ -43,7 +43,7 @@ const DraggableRow = memo(function DraggableRow({
   isDragged, dragY, dragScale, shiftY,
 }: DraggableRowProps) {
   const draggingRef = useRef(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // 로컬 ref — PanResponder 클로저가 항상 최신 값을 읽도록
   const indexRef = useRef(index);

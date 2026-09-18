@@ -30,16 +30,14 @@ export default function AppHeader({ syncStatus = 'none', lastSyncAt, onSettingsP
       <View>
         <Text style={styles.title}>똑똑이</Text>
         <Text style={styles.subtitle}>스마트한 하루 정리</Text>
-        {totalCount > 0 && (
-          <View style={styles.progressWrapper}>
-            <Text style={styles.progress}>
-              {totalCount}개 중 {doneCount}개 완료 · {rate}%
-            </Text>
-            <View style={styles.barTrack}>
-              <View style={[styles.barFill, { width: `${rate}%` }]} />
-            </View>
+        <View style={styles.progressWrapper}>
+          <Text style={styles.progress}>
+            {totalCount}개 중 {doneCount}개 완료 · {rate}%
+          </Text>
+          <View style={styles.barTrack}>
+            <View style={[styles.barFill, { width: `${rate}%` }]} />
           </View>
-        )}
+        </View>
       </View>
       <View style={styles.right}>
         {config && (
