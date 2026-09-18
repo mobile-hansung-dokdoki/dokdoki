@@ -5,6 +5,7 @@ import { Todo } from '../types';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { formatDateKorean, fromDateString, todayString } from '../utils/date';
+import { TAG_MAP } from '../constants/tags';
 
 interface TodoItemProps {
   todo: Todo;
@@ -40,6 +41,18 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemP
         >
           {todo.text}
         </Text>
+        {todo.tags && todo.tags.length > 0 && (
+          <View style={styles.tagRow}>
+            {todo.tags.map(tagId => {
+              const tag = TAG_MAP[tagId];
+              return (
+                <View key={tagId} style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
+                  <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
         {todo.dueDate && (
           <View style={styles.dateRow}>
             <Text style={[styles.dateText, todo.done && styles.textDone]}>
@@ -109,6 +122,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     lineHeight: 22,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    gap: 4,
+    flexWrap: 'wrap',
+  },
+  tagChip: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  tagChipText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   dateRow: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Todo, Filter, SortOrder } from '../types';
+import { Todo, Filter, SortOrder, TagId } from '../types';
 import { formatDateKorean, fromDateString } from '../utils/date';
 
 const generateId = (): string =>
@@ -10,13 +10,14 @@ export function useTodos() {
   const [filter, setFilter] = useState<Filter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('createdDesc');
+  const [activeTag, setActiveTag] = useState<TagId | null>(null);
 
-  const addTodo = useCallback((text: string, dueDate?: string) => {
+  const addTodo = useCallback((text: string, dueDate?: string, tags?: TagId[]) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     const now = Date.now();
     setTodos(prev => [
-      { id: generateId(), text: trimmed, done: false, dueDate, createdAt: now, updatedAt: now },
+      { id: generateId(), text: trimmed, done: false, dueDate, tags, createdAt: now, updatedAt: now },
       ...prev,
     ]);
   }, []);
@@ -31,12 +32,12 @@ export function useTodos() {
     );
   }, []);
 
-  const editTodo = useCallback((id: string, text: string, dueDate?: string) => {
+  const editTodo = useCallback((id: string, text: string, dueDate?: string, tags?: TagId[]) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     setTodos(prev =>
       prev.map(todo =>
-        todo.id === id ? { ...todo, text: trimmed, dueDate, updatedAt: Date.now() } : todo
+        todo.id === id ? { ...todo, text: trimmed, dueDate, tags, updatedAt: Date.now() } : todo
       )
     );
   }, []);
@@ -49,6 +50,7 @@ export function useTodos() {
     .filter(todo => {
       if (filter === 'active' && todo.done) return false;
       if (filter === 'done' && !todo.done) return false;
+      if (activeTag && !todo.tags?.includes(activeTag)) return false;
 
       const q = searchQuery.trim();
       if (q) {
@@ -83,6 +85,8 @@ export function useTodos() {
     setSearchQuery,
     sortOrder,
     setSortOrder,
+    activeTag,
+    setActiveTag,
     addTodo,
     toggleTodo,
     editTodo,

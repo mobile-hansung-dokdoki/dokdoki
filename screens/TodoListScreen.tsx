@@ -12,10 +12,11 @@ import EditTodoModal from '../components/EditTodoModal';
 import CalendarSheet from '../components/CalendarSheet';
 import SettingsScreen from './SettingsScreen';
 import SearchBar from '../components/SearchBar';
+import TagFilter from '../components/TagFilter';
 import { Colors } from '../constants/colors';
 
 export default function TodoListScreen() {
-  const { todos, filteredTodos, doneCount, filter, setFilter, searchQuery, setSearchQuery, sortOrder, setSortOrder, addTodo, toggleTodo, editTodo, deleteTodo } = useTodos();
+  const { todos, filteredTodos, doneCount, filter, setFilter, searchQuery, setSearchQuery, sortOrder, setSortOrder, activeTag, setActiveTag, addTodo, toggleTodo, editTodo, deleteTodo } = useTodos();
   const [modalVisible, setModalVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -31,6 +32,7 @@ export default function TodoListScreen() {
           onCalendarPress={() => setCalendarVisible(true)}
         />
         <FilterTabs activeFilter={filter} onFilterChange={setFilter} doneCount={doneCount} />
+        <TagFilter activeTag={activeTag} onTagChange={setActiveTag} />
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
