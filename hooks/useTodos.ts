@@ -93,12 +93,24 @@ export function useTodos() {
       return true;
     })
     .sort((a, b) => {
-      if (sortOrder === 'createdDesc') return b.createdAt - a.createdAt;
-      if (sortOrder === 'createdAsc') return a.createdAt - b.createdAt;
-      if (!a.dueDate && !b.dueDate) return b.createdAt - a.createdAt;
-      if (!a.dueDate) return 1;
-      if (!b.dueDate) return -1;
-      return a.dueDate.localeCompare(b.dueDate);
+      if (sortOrder === 'createdDesc') {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        return b.createdAt - a.createdAt;
+      }
+      if (sortOrder === 'createdAsc') {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        return a.createdAt - b.createdAt;
+      }
+      // 마감날짜순: 날짜 그룹 안에서 완료 항목이 아래로
+      const aDate = a.dueDate ?? '';
+      const bDate = b.dueDate ?? '';
+      if (aDate !== bDate) {
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return aDate.localeCompare(bDate);
+      }
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return b.createdAt - a.createdAt;
     });
 
   const doneCount = todos.filter(todo => todo.done).length;

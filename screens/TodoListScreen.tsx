@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
-import { View, FlatList, SafeAreaView, StyleSheet, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, ScrollView, SafeAreaView, StyleSheet, Keyboard, TouchableWithoutFeedback, LayoutAnimation, Platform, UIManager } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { useTodos } from '../hooks/useTodos';
 import { Todo } from '../types';
 import AppHeader from '../components/AppHeader';
@@ -26,6 +30,14 @@ export default function TodoListScreen() {
     userTags, tagMap, addUserTag, deleteUserTag, reorderUserTags,
     addTodo, toggleTodo, editTodo, deleteTodo,
   } = useTodos();
+
+  const handleToggle = useCallback((id: string) => {
+    LayoutAnimation.configureNext({
+      duration: 300,
+      update: { type: 'easeInEaseOut', property: 'scaleXY' },
+    });
+    toggleTodo(id);
+  }, [toggleTodo]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -67,25 +79,24 @@ export default function TodoListScreen() {
           {filteredTodos.length === 0 ? (
             <EmptyState />
           ) : (
-            <FlatList
-              data={filteredTodos}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <TodoItem
-                  todo={item}
-                  onToggle={toggleTodo}
-                  onEdit={setEditingTodo}
-                  onDelete={deleteTodo}
-                  tagMap={tagMap}
-                />
-              )}
+            <ScrollView
               style={styles.list}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
               keyboardDismissMode="on-drag"
               keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled
-            />
+            >
+              {filteredTodos.map(item => (
+                <TodoItem
+                  key={item.id}
+                  todo={item}
+                  onToggle={handleToggle}
+                  onEdit={setEditingTodo}
+                  onDelete={deleteTodo}
+                  tagMap={tagMap}
+                />
+              ))}
+            </ScrollView>
           )}
 
           <BottomBar
