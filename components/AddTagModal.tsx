@@ -14,19 +14,18 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 import { Ionicons } from '@expo/vector-icons';
 import { Tag } from '../types';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { COLOR_PALETTE } from '../constants/tags';
 
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 const ROW_HEIGHT = 46;
 
 interface DraggableRowProps {
   tag: Tag;
-  indexRef: React.MutableRefObject<number>;
+  index: number;
   totalCount: number;
   onDelete: (id: string) => void;
   onDragStart: (index: number) => void;
@@ -39,11 +38,18 @@ interface DraggableRowProps {
 }
 
 const DraggableRow = memo(function DraggableRow({
-  tag, indexRef, totalCount, onDelete, onDragStart, onDragMove, onDragEnd,
+  tag, index, totalCount, onDelete, onDragStart, onDragMove, onDragEnd,
   isDragged, dragY, dragScale, shiftY,
 }: DraggableRowProps) {
   const draggingRef = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // 로컬 ref — PanResponder 클로저가 항상 최신 값을 읽도록
+  const indexRef = useRef(index);
+  indexRef.current = index;
+
+  const canDragRef = useRef(totalCount > 1);
+  canDragRef.current = totalCount > 1;
 
   const onDragStartRef = useRef(onDragStart);
   const onDragMoveRef = useRef(onDragMove);
@@ -56,11 +62,9 @@ const DraggableRow = memo(function DraggableRow({
     return () => clearTimeout(longPressTimer.current);
   }, []);
 
-  const canDrag = totalCount > 1;
-
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => canDrag,
+      onStartShouldSetPanResponder: () => canDragRef.current,
       onShouldBlockNativeResponder: () => false,
       onPanResponderGrant: () => {
         draggingRef.current = false;
@@ -92,6 +96,8 @@ const DraggableRow = memo(function DraggableRow({
     })
   ).current;
 
+  const canDrag = totalCount > 1;
+
   const rowTransform = isDragged
     ? [{ scale: dragScale }, { translateY: dragY }]
     : shiftY !== 0
@@ -106,7 +112,6 @@ const DraggableRow = memo(function DraggableRow({
         rowTransform ? { transform: rowTransform } : undefined,
       ]}
     >
-      {/* 드래그 핸들 + 칩 영역 */}
       <View
         style={styles.dragArea}
         {...(canDrag ? panResponder.panHandlers : {})}
@@ -118,7 +123,6 @@ const DraggableRow = memo(function DraggableRow({
           <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
         </View>
       </View>
-      {/* 삭제 버튼 */}
       <TouchableOpacity
         onPress={() => onDelete(tag.id)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -152,15 +156,6 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
   const dragScale = useRef(new Animated.Value(1)).current;
   const fromIndexRef = useRef(0);
 
-  // indexRef 배열 - 항상 userTags.length 크기로 맞춤
-  const indexRefs = useRef<React.MutableRefObject<number>[]>([]);
-  const needed = userTags.length;
-  while (indexRefs.current.length < needed) {
-    indexRefs.current.push({ current: indexRefs.current.length });
-  }
-  indexRefs.current.length = needed;
-  indexRefs.current.forEach((ref, i) => { ref.current = i; });
-
   useEffect(() => {
     if (visible) {
       setLabel('');
@@ -179,7 +174,6 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
         ]),
       ]).start();
     } else {
-      // 모달 닫힐 때 드래그 상태 정리
       setDragInfo(null);
       dragY.setValue(0);
       dragScale.setValue(1);
@@ -259,7 +253,6 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
         style={styles.kvView}
       >
         <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
-          {/* 키보드로 공간 줄어들면 시트 전체를 스크롤로 확인 가능 */}
           <ScrollView
             style={styles.sheet}
             contentContainerStyle={styles.sheetContent}
@@ -267,109 +260,103 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
             keyboardShouldPersistTaps="always"
             bounces={false}
           >
-              <View style={styles.handle} />
-              <Text style={styles.title}>태그 관리</Text>
+            <View style={styles.handle} />
+            <Text style={styles.title}>태그 관리</Text>
 
-              {/* 기존 태그 목록 — 키보드 열린 상태에서도 스크롤 가능 */}
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>등록된 태그</Text>
-                <View style={styles.tagListContainer}>
-                  {userTags.length === 0 ? (
-                    <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
-                  ) : (
-                    <ScrollView
-                      style={styles.tagList}
-                      showsVerticalScrollIndicator={false}
-                      scrollEnabled={!dragInfo}
-                      keyboardShouldPersistTaps="handled"
-                      nestedScrollEnabled
-                    >
-                      {userTags.map((tag, idx) => (
-                        <DraggableRow
-                          key={tag.id}
-                          tag={tag}
-                          indexRef={indexRefs.current[idx]}
-                          totalCount={userTags.length}
-                          onDelete={onDelete}
-                          onDragStart={handleDragStart}
-                          onDragMove={handleDragMove}
-                          onDragEnd={handleDragEnd}
-                          isDragged={dragInfo?.fromIndex === idx}
-                          dragY={dragY}
-                          dragScale={dragScale}
-                          shiftY={getShiftY(idx)}
-                        />
-                      ))}
-                    </ScrollView>
-                  )}
-                </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              {/* 새 태그 추가 */}
-              <Text style={styles.sectionLabel}>새 태그 추가</Text>
-
-              {/* 미리보기 */}
-              <View style={styles.previewRow}>
-                <View style={[styles.previewChip, { backgroundColor: previewBg }]}>
-                  <Text style={[styles.previewChipText, { color: previewColor }]}>
-                    {label.trim() || '태그명'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* 태그명 입력 */}
-              <TextInput
-                ref={inputRef}
-                style={styles.input}
-                value={label}
-                onChangeText={setLabel}
-                placeholder="태그 이름 (최대 10자)"
-                placeholderTextColor={Colors.textSecondary}
-                returnKeyType="done"
-                onSubmitEditing={handleAdd}
-                maxLength={10}
-              />
-
-              {/* 색상 팔레트 — 가로 스크롤, 키보드 열려도 탭 가능 */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyboardShouldPersistTaps="always"
-                contentContainerStyle={styles.palette}
-              >
-                {COLOR_PALETTE.map((c, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={[
-                      styles.colorCircle,
-                      { backgroundColor: c.bgColor, borderColor: c.color },
-                      selectedColorIdx === idx && styles.colorCircleSelected,
-                    ]}
-                    onPress={() => setSelectedColorIdx(idx)}
-                    activeOpacity={0.7}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>등록된 태그</Text>
+              <View style={styles.tagListContainer}>
+                {userTags.length === 0 ? (
+                  <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
+                ) : (
+                  <ScrollView
+                    style={styles.tagList}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={!dragInfo}
+                    keyboardShouldPersistTaps="handled"
+                    nestedScrollEnabled
                   >
-                    <View style={[styles.colorDot, { backgroundColor: c.color }]} />
-                    {selectedColorIdx === idx && <View style={styles.selectedRing} />}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              {/* 버튼 */}
-              <View style={styles.buttons}>
-                <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
-                  <Text style={styles.cancelText}>닫기</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
-                  onPress={handleAdd}
-                  activeOpacity={0.8}
-                  disabled={!canAdd}
-                >
-                  <Text style={styles.confirmText}>추가</Text>
-                </TouchableOpacity>
+                    {userTags.map((tag, idx) => (
+                      <DraggableRow
+                        key={tag.id}
+                        tag={tag}
+                        index={idx}
+                        totalCount={userTags.length}
+                        onDelete={onDelete}
+                        onDragStart={handleDragStart}
+                        onDragMove={handleDragMove}
+                        onDragEnd={handleDragEnd}
+                        isDragged={dragInfo?.fromIndex === idx}
+                        dragY={dragY}
+                        dragScale={dragScale}
+                        shiftY={getShiftY(idx)}
+                      />
+                    ))}
+                  </ScrollView>
+                )}
               </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <Text style={styles.sectionLabel}>새 태그 추가</Text>
+
+            <View style={styles.previewRow}>
+              <View style={[styles.previewChip, { backgroundColor: previewBg }]}>
+                <Text style={[styles.previewChipText, { color: previewColor }]}>
+                  {label.trim() || '태그명'}
+                </Text>
+              </View>
+            </View>
+
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={label}
+              onChangeText={setLabel}
+              placeholder="태그 이름 (최대 10자)"
+              placeholderTextColor={Colors.textSecondary}
+              returnKeyType="done"
+              onSubmitEditing={handleAdd}
+              maxLength={10}
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              contentContainerStyle={styles.palette}
+            >
+              {COLOR_PALETTE.map((c, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.colorCircle,
+                    { backgroundColor: c.bgColor, borderColor: c.color },
+                    selectedColorIdx === idx && styles.colorCircleSelected,
+                  ]}
+                  onPress={() => setSelectedColorIdx(idx)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.colorDot, { backgroundColor: c.color }]} />
+                  {selectedColorIdx === idx && <View style={styles.selectedRing} />}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={styles.buttons}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
+                <Text style={styles.cancelText}>닫기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
+                onPress={handleAdd}
+                activeOpacity={0.8}
+                disabled={!canAdd}
+              >
+                <Text style={styles.confirmText}>추가</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
