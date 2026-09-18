@@ -250,9 +250,14 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
         style={styles.kvView}
       >
         <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
-          {/* 외부 컨테이너를 View로 유지 — 내부 ScrollView들이 독립적으로 스크롤 */}
-          <View style={styles.sheet}>
-            <View style={styles.sheetContent}>
+          {/* 키보드로 공간 줄어들면 시트 전체를 스크롤로 확인 가능 */}
+          <ScrollView
+            style={styles.sheet}
+            contentContainerStyle={styles.sheetContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="always"
+            bounces={false}
+          >
               <View style={styles.handle} />
               <Text style={styles.title}>태그 관리</Text>
 
@@ -356,8 +361,7 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
                   <Text style={styles.confirmText}>추가</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          </View>
+          </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
@@ -379,6 +383,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    maxHeight: '92%',
   },
   sheetContent: {
     paddingHorizontal: Spacing.screenHorizontal,
