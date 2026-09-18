@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import {
   Modal,
   View,
@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   ScrollView,
+  PanResponder,
   StyleSheet,
   Animated,
   Platform,
@@ -18,15 +19,112 @@ import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { COLOR_PALETTE } from '../constants/tags';
 
+const ROW_HEIGHT = 46;
+
+interface DraggableRowProps {
+  tag: Tag;
+  indexRef: React.MutableRefObject<number>;
+  onDelete: (id: string) => void;
+  onDragStart: (index: number) => void;
+  onDragMove: (dy: number) => void;
+  onDragEnd: (dy: number) => void;
+  isDragged: boolean;
+  dragY: Animated.Value;
+  dragScale: Animated.Value;
+  shiftY: number;
+}
+
+const DraggableRow = memo(function DraggableRow({
+  tag, indexRef, onDelete, onDragStart, onDragMove, onDragEnd,
+  isDragged, dragY, dragScale, shiftY,
+}: DraggableRowProps) {
+  const draggingRef = useRef(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const onDragStartRef = useRef(onDragStart);
+  const onDragMoveRef = useRef(onDragMove);
+  const onDragEndRef = useRef(onDragEnd);
+  onDragStartRef.current = onDragStart;
+  onDragMoveRef.current = onDragMove;
+  onDragEndRef.current = onDragEnd;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onShouldBlockNativeResponder: () => false,
+      onPanResponderGrant: () => {
+        draggingRef.current = false;
+        longPressTimer.current = setTimeout(() => {
+          draggingRef.current = true;
+          onDragStartRef.current(indexRef.current);
+        }, 380);
+      },
+      onPanResponderMove: (_, { dy, dx }) => {
+        if (!draggingRef.current) {
+          if (Math.abs(dy) > 8 || Math.abs(dx) > 8) {
+            clearTimeout(longPressTimer.current);
+          }
+          return;
+        }
+        onDragMoveRef.current(dy);
+      },
+      onPanResponderRelease: (_, { dy }) => {
+        clearTimeout(longPressTimer.current);
+        if (draggingRef.current) {
+          draggingRef.current = false;
+          onDragEndRef.current(dy);
+        }
+      },
+      onPanResponderTerminate: () => {
+        clearTimeout(longPressTimer.current);
+        draggingRef.current = false;
+      },
+    })
+  ).current;
+
+  const rowTransform = isDragged
+    ? [{ scale: dragScale }, { translateY: dragY }]
+    : shiftY !== 0
+    ? [{ translateY: shiftY }]
+    : undefined;
+
+  return (
+    <Animated.View
+      style={[
+        styles.tagRow,
+        isDragged && styles.tagRowDragged,
+        rowTransform ? { transform: rowTransform } : undefined,
+      ]}
+    >
+      {/* 드래그 핸들 + 칩 영역 (꾹 누르면 드래그 활성화) */}
+      <View style={styles.dragArea} {...panResponder.panHandlers}>
+        <Ionicons name="reorder-three-outline" size={20} color={Colors.textSecondary} />
+        <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
+          <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+        </View>
+      </View>
+      {/* 삭제 버튼은 별도 터치 영역 */}
+      <TouchableOpacity
+        onPress={() => onDelete(tag.id)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
+
 interface AddTagModalProps {
   visible: boolean;
   onClose: () => void;
   onAdd: (label: string, color: string, bgColor: string) => void;
   onDelete: (tagId: string) => void;
+  onReorder: (from: number, to: number) => void;
   userTags: Tag[];
 }
 
-export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTags }: AddTagModalProps) {
+export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReorder, userTags }: AddTagModalProps) {
   const [label, setLabel] = useState('');
   const [selectedColorIdx, setSelectedColorIdx] = useState(0);
   const inputRef = useRef<TextInput>(null);
@@ -34,10 +132,26 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(500)).current;
 
+  // 드래그 상태
+  const [dragInfo, setDragInfo] = useState<{ fromIndex: number; toIndex: number } | null>(null);
+  const dragY = useRef(new Animated.Value(0)).current;
+  const dragScale = useRef(new Animated.Value(1)).current;
+  const fromIndexRef = useRef(0);
+
+  // 각 행의 indexRef - 드래그 핸들러 클로저 안에서 최신 index 참조용
+  const indexRefs = useRef<React.MutableRefObject<number>[]>([]);
+  while (indexRefs.current.length < userTags.length) {
+    indexRefs.current.push({ current: indexRefs.current.length });
+  }
+  indexRefs.current.slice(0, userTags.length).forEach((ref, i) => { ref.current = i; });
+
   useEffect(() => {
     if (visible) {
       setLabel('');
       setSelectedColorIdx(0);
+      setDragInfo(null);
+      dragY.setValue(0);
+      dragScale.setValue(1);
       overlayOpacity.setValue(0);
       sheetTranslateY.setValue(500);
 
@@ -68,6 +182,39 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
     onAdd(trimmed, color, bgColor);
     setLabel('');
     setSelectedColorIdx(0);
+  };
+
+  const handleDragStart = useCallback((index: number) => {
+    fromIndexRef.current = index;
+    dragY.setValue(0);
+    Animated.spring(dragScale, { toValue: 1.06, useNativeDriver: true }).start();
+    setDragInfo({ fromIndex: index, toIndex: index });
+  }, [dragY, dragScale]);
+
+  const handleDragMove = useCallback((dy: number) => {
+    dragY.setValue(dy);
+    const toIndex = Math.max(0, Math.min(userTags.length - 1,
+      Math.round(fromIndexRef.current + dy / ROW_HEIGHT)));
+    setDragInfo(prev => prev ? { ...prev, toIndex } : null);
+  }, [userTags.length]);
+
+  const handleDragEnd = useCallback((dy: number) => {
+    const toIndex = Math.max(0, Math.min(userTags.length - 1,
+      Math.round(fromIndexRef.current + dy / ROW_HEIGHT)));
+    Animated.spring(dragScale, { toValue: 1, useNativeDriver: true }).start();
+    dragY.setValue(0);
+    if (toIndex !== fromIndexRef.current) {
+      onReorder(fromIndexRef.current, toIndex);
+    }
+    setDragInfo(null);
+  }, [userTags.length, dragScale, onReorder]);
+
+  const getShiftY = (index: number): number => {
+    if (!dragInfo || index === dragInfo.fromIndex) return 0;
+    const { fromIndex, toIndex } = dragInfo;
+    if (fromIndex < toIndex && index > fromIndex && index <= toIndex) return -ROW_HEIGHT;
+    if (fromIndex > toIndex && index >= toIndex && index < fromIndex) return ROW_HEIGHT;
+    return 0;
   };
 
   const canAdd = label.trim().length > 0;
@@ -104,23 +251,31 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
                   <ScrollView
                     style={styles.tagList}
                     showsVerticalScrollIndicator={false}
+                    scrollEnabled={!dragInfo}
                     keyboardShouldPersistTaps="always"
                     nestedScrollEnabled
                   >
-                    {userTags.map(tag => (
-                      <View key={tag.id} style={styles.tagRow}>
-                        <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
-                          <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
-                        </View>
-                        <TouchableOpacity
-                          onPress={() => onDelete(tag.id)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
+                    {userTags.map((tag, idx) => {
+                      if (!indexRefs.current[idx]) {
+                        indexRefs.current[idx] = { current: idx };
+                      }
+                      indexRefs.current[idx].current = idx;
+                      return (
+                        <DraggableRow
+                          key={tag.id}
+                          tag={tag}
+                          indexRef={indexRefs.current[idx]}
+                          onDelete={onDelete}
+                          onDragStart={handleDragStart}
+                          onDragMove={handleDragMove}
+                          onDragEnd={handleDragEnd}
+                          isDragged={dragInfo?.fromIndex === idx}
+                          dragY={dragY}
+                          dragScale={dragScale}
+                          shiftY={getShiftY(idx)}
+                        />
+                      );
+                    })}
                   </ScrollView>
                 )}
               </View>
@@ -153,8 +308,13 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
               maxLength={10}
             />
 
-            {/* 색상 팔레트 */}
-            <View style={styles.palette}>
+            {/* 색상 팔레트 — 한 줄 가로 스크롤 */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              contentContainerStyle={styles.palette}
+            >
               {COLOR_PALETTE.map((c, idx) => (
                 <TouchableOpacity
                   key={idx}
@@ -170,7 +330,7 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
                   {selectedColorIdx === idx && <View style={styles.selectedRing} />}
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
 
             {/* 버튼 */}
             <View style={styles.buttons}>
@@ -248,10 +408,26 @@ const styles = StyleSheet.create({
   tagRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
+    height: ROW_HEIGHT,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  tagRowDragged: {
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
+    borderRadius: 8,
+    borderBottomWidth: 0,
+    zIndex: 10,
+  },
+  dragArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 8,
   },
   tagChip: {
     paddingHorizontal: 12,
@@ -292,8 +468,9 @@ const styles = StyleSheet.create({
   },
   palette: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
   },
   colorCircle: {
     width: 40, height: 40,

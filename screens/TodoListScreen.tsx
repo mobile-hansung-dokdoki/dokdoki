@@ -23,7 +23,7 @@ export default function TodoListScreen() {
     searchQuery, setSearchQuery,
     sortOrder, setSortOrder,
     activeTags, toggleActiveTag, setActiveTags,
-    userTags, tagMap, addUserTag, deleteUserTag,
+    userTags, tagMap, addUserTag, deleteUserTag, reorderUserTags,
     addTodo, toggleTodo, editTodo, deleteTodo,
   } = useTodos();
 
@@ -110,6 +110,7 @@ export default function TodoListScreen() {
           onClose={() => setAddTagVisible(false)}
           onAdd={addUserTag}
           onDelete={deleteUserTag}
+          onReorder={reorderUserTags}
           userTags={userTags}
         />
         <CalendarSheet

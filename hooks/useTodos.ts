@@ -58,6 +58,15 @@ export function useTodos() {
     setActiveTags(prev => prev.filter(t => t !== tagId));
   }, []);
 
+  const reorderUserTags = useCallback((from: number, to: number) => {
+    setUserTags(prev => {
+      const next = [...prev];
+      const [removed] = next.splice(from, 1);
+      next.splice(to, 0, removed);
+      return next;
+    });
+  }, []);
+
   const toggleActiveTag = useCallback((tagId: TagId) => {
     setActiveTags(prev =>
       prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
@@ -111,6 +120,7 @@ export function useTodos() {
     tagMap,
     addUserTag,
     deleteUserTag,
+    reorderUserTags,
     addTodo,
     toggleTodo,
     editTodo,
