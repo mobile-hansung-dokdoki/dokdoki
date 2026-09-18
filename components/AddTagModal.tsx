@@ -13,6 +13,7 @@ import {
   Animated,
   Platform,
   Dimensions,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Tag } from '../types';
@@ -153,6 +154,13 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
 
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [dragInfo, setDragInfo] = useState<{ fromIndex: number; toIndex: number } | null>(null);
+
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidHide', () => {
+      setIsInputFocused(false);
+    });
+    return () => sub.remove();
+  }, []);
   const dragY = useRef(new Animated.Value(0)).current;
   const dragScale = useRef(new Animated.Value(1)).current;
   const fromIndexRef = useRef(0);
