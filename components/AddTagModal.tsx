@@ -46,9 +46,7 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
           Animated.delay(60),
           Animated.timing(sheetTranslateY, { toValue: 0, duration: 280, useNativeDriver: true }),
         ]),
-      ]).start(() => {
-        setTimeout(() => inputRef.current?.focus(), 50);
-      });
+      ]).start();
     }
   }, [visible]);
 
