@@ -151,6 +151,7 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(500)).current;
 
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const [dragInfo, setDragInfo] = useState<{ fromIndex: number; toIndex: number } | null>(null);
   const dragY = useRef(new Animated.Value(0)).current;
   const dragScale = useRef(new Animated.Value(1)).current;
@@ -160,6 +161,7 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
     if (visible) {
       setLabel('');
       setSelectedColorIdx(0);
+      setIsInputFocused(false);
       setDragInfo(null);
       dragY.setValue(0);
       dragScale.setValue(1);
@@ -265,36 +267,57 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
 
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>등록된 태그</Text>
-              <View style={styles.tagListContainer}>
-                {userTags.length === 0 ? (
+              {isInputFocused ? (
+                /* 키보드 열린 상태: 가로 스크롤 칩 뷰 */
+                userTags.length === 0 ? (
                   <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
                 ) : (
                   <ScrollView
-                    style={styles.tagList}
-                    showsVerticalScrollIndicator={false}
-                    scrollEnabled={!dragInfo}
-                    keyboardShouldPersistTaps="handled"
-                    nestedScrollEnabled
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyboardShouldPersistTaps="always"
+                    contentContainerStyle={styles.tagChipRow}
                   >
-                    {userTags.map((tag, idx) => (
-                      <DraggableRow
-                        key={tag.id}
-                        tag={tag}
-                        index={idx}
-                        totalCount={userTags.length}
-                        onDelete={onDelete}
-                        onDragStart={handleDragStart}
-                        onDragMove={handleDragMove}
-                        onDragEnd={handleDragEnd}
-                        isDragged={dragInfo?.fromIndex === idx}
-                        dragY={dragY}
-                        dragScale={dragScale}
-                        shiftY={getShiftY(idx)}
-                      />
+                    {userTags.map(tag => (
+                      <View key={tag.id} style={[styles.tagChipCompact, { backgroundColor: tag.bgColor }]}>
+                        <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+                      </View>
                     ))}
                   </ScrollView>
-                )}
-              </View>
+                )
+              ) : (
+                /* 키보드 닫힌 상태: 세로 드래그 목록 */
+                <View style={styles.tagListContainer}>
+                  {userTags.length === 0 ? (
+                    <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
+                  ) : (
+                    <ScrollView
+                      style={styles.tagList}
+                      showsVerticalScrollIndicator={false}
+                      scrollEnabled={!dragInfo}
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled
+                    >
+                      {userTags.map((tag, idx) => (
+                        <DraggableRow
+                          key={tag.id}
+                          tag={tag}
+                          index={idx}
+                          totalCount={userTags.length}
+                          onDelete={onDelete}
+                          onDragStart={handleDragStart}
+                          onDragMove={handleDragMove}
+                          onDragEnd={handleDragEnd}
+                          isDragged={dragInfo?.fromIndex === idx}
+                          dragY={dragY}
+                          dragScale={dragScale}
+                          shiftY={getShiftY(idx)}
+                        />
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              )}
             </View>
 
             <View style={styles.divider} />
@@ -318,6 +341,8 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
               placeholderTextColor={Colors.textSecondary}
               returnKeyType="done"
               onSubmitEditing={handleAdd}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
               maxLength={10}
             />
 
@@ -416,6 +441,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary,
     paddingVertical: 8,
+  },
+  tagChipRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+  },
+  tagChipCompact: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 50,
   },
   tagRow: {
     flexDirection: 'row',
