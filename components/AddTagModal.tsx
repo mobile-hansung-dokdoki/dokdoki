@@ -24,6 +24,7 @@ const ROW_HEIGHT = 46;
 interface DraggableRowProps {
   tag: Tag;
   indexRef: React.MutableRefObject<number>;
+  totalCount: number;
   onDelete: (id: string) => void;
   onDragStart: (index: number) => void;
   onDragMove: (dy: number) => void;
@@ -35,7 +36,7 @@ interface DraggableRowProps {
 }
 
 const DraggableRow = memo(function DraggableRow({
-  tag, indexRef, onDelete, onDragStart, onDragMove, onDragEnd,
+  tag, indexRef, totalCount, onDelete, onDragStart, onDragMove, onDragEnd,
   isDragged, dragY, dragScale, shiftY,
 }: DraggableRowProps) {
   const draggingRef = useRef(false);
@@ -48,9 +49,15 @@ const DraggableRow = memo(function DraggableRow({
   onDragMoveRef.current = onDragMove;
   onDragEndRef.current = onDragEnd;
 
+  useEffect(() => {
+    return () => clearTimeout(longPressTimer.current);
+  }, []);
+
+  const canDrag = totalCount > 1;
+
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => canDrag,
       onShouldBlockNativeResponder: () => false,
       onPanResponderGrant: () => {
         draggingRef.current = false;
@@ -96,14 +103,19 @@ const DraggableRow = memo(function DraggableRow({
         rowTransform ? { transform: rowTransform } : undefined,
       ]}
     >
-      {/* 드래그 핸들 + 칩 영역 (꾹 누르면 드래그 활성화) */}
-      <View style={styles.dragArea} {...panResponder.panHandlers}>
-        <Ionicons name="reorder-three-outline" size={20} color={Colors.textSecondary} />
+      {/* 드래그 핸들 + 칩 영역 */}
+      <View
+        style={styles.dragArea}
+        {...(canDrag ? panResponder.panHandlers : {})}
+      >
+        {canDrag && (
+          <Ionicons name="reorder-three-outline" size={20} color={Colors.textSecondary} />
+        )}
         <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
           <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
         </View>
       </View>
-      {/* 삭제 버튼은 별도 터치 영역 */}
+      {/* 삭제 버튼 */}
       <TouchableOpacity
         onPress={() => onDelete(tag.id)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -132,18 +144,19 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(500)).current;
 
-  // 드래그 상태
   const [dragInfo, setDragInfo] = useState<{ fromIndex: number; toIndex: number } | null>(null);
   const dragY = useRef(new Animated.Value(0)).current;
   const dragScale = useRef(new Animated.Value(1)).current;
   const fromIndexRef = useRef(0);
 
-  // 각 행의 indexRef - 드래그 핸들러 클로저 안에서 최신 index 참조용
+  // indexRef 배열 - 항상 userTags.length 크기로 맞춤
   const indexRefs = useRef<React.MutableRefObject<number>[]>([]);
-  while (indexRefs.current.length < userTags.length) {
+  const needed = userTags.length;
+  while (indexRefs.current.length < needed) {
     indexRefs.current.push({ current: indexRefs.current.length });
   }
-  indexRefs.current.slice(0, userTags.length).forEach((ref, i) => { ref.current = i; });
+  indexRefs.current.length = needed;
+  indexRefs.current.forEach((ref, i) => { ref.current = i; });
 
   useEffect(() => {
     if (visible) {
@@ -162,10 +175,16 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
           Animated.timing(sheetTranslateY, { toValue: 0, duration: 280, useNativeDriver: true }),
         ]),
       ]).start();
+    } else {
+      // 모달 닫힐 때 드래그 상태 정리
+      setDragInfo(null);
+      dragY.setValue(0);
+      dragScale.setValue(1);
     }
   }, [visible]);
 
   const handleClose = useCallback(() => {
+    setDragInfo(null);
     Animated.parallel([
       Animated.timing(sheetTranslateY, { toValue: 500, duration: 240, useNativeDriver: true }),
       Animated.sequence([
@@ -231,40 +250,32 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
         style={styles.kvView}
       >
         <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
-          <ScrollView
-            style={styles.sheet}
-            contentContainerStyle={styles.sheetContent}
-            scrollEnabled={false}
-            keyboardShouldPersistTaps="always"
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.handle} />
-            <Text style={styles.title}>태그 관리</Text>
+          {/* 외부 컨테이너를 View로 유지 — 내부 ScrollView들이 독립적으로 스크롤 */}
+          <View style={styles.sheet}>
+            <View style={styles.sheetContent}>
+              <View style={styles.handle} />
+              <Text style={styles.title}>태그 관리</Text>
 
-            {/* 기존 태그 목록 */}
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>등록된 태그</Text>
-              <View style={styles.tagListContainer}>
-                {userTags.length === 0 ? (
-                  <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
-                ) : (
-                  <ScrollView
-                    style={styles.tagList}
-                    showsVerticalScrollIndicator={false}
-                    scrollEnabled={!dragInfo}
-                    keyboardShouldPersistTaps="always"
-                    nestedScrollEnabled
-                  >
-                    {userTags.map((tag, idx) => {
-                      if (!indexRefs.current[idx]) {
-                        indexRefs.current[idx] = { current: idx };
-                      }
-                      indexRefs.current[idx].current = idx;
-                      return (
+              {/* 기존 태그 목록 — 키보드 열린 상태에서도 스크롤 가능 */}
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>등록된 태그</Text>
+                <View style={styles.tagListContainer}>
+                  {userTags.length === 0 ? (
+                    <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
+                  ) : (
+                    <ScrollView
+                      style={styles.tagList}
+                      showsVerticalScrollIndicator={false}
+                      scrollEnabled={!dragInfo}
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled
+                    >
+                      {userTags.map((tag, idx) => (
                         <DraggableRow
                           key={tag.id}
                           tag={tag}
                           indexRef={indexRefs.current[idx]}
+                          totalCount={userTags.length}
                           onDelete={onDelete}
                           onDragStart={handleDragStart}
                           onDragMove={handleDragMove}
@@ -274,79 +285,79 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
                           dragScale={dragScale}
                           shiftY={getShiftY(idx)}
                         />
-                      );
-                    })}
-                  </ScrollView>
-                )}
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
               </View>
-            </View>
 
-            <View style={styles.divider} />
+              <View style={styles.divider} />
 
-            {/* 새 태그 추가 */}
-            <Text style={styles.sectionLabel}>새 태그 추가</Text>
+              {/* 새 태그 추가 */}
+              <Text style={styles.sectionLabel}>새 태그 추가</Text>
 
-            {/* 미리보기 */}
-            <View style={styles.previewRow}>
-              <View style={[styles.previewChip, { backgroundColor: previewBg }]}>
-                <Text style={[styles.previewChipText, { color: previewColor }]}>
-                  {label.trim() || '태그명'}
-                </Text>
+              {/* 미리보기 */}
+              <View style={styles.previewRow}>
+                <View style={[styles.previewChip, { backgroundColor: previewBg }]}>
+                  <Text style={[styles.previewChipText, { color: previewColor }]}>
+                    {label.trim() || '태그명'}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            {/* 태그명 입력 */}
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              value={label}
-              onChangeText={setLabel}
-              placeholder="태그 이름 (최대 10자)"
-              placeholderTextColor={Colors.textSecondary}
-              returnKeyType="done"
-              onSubmitEditing={handleAdd}
-              maxLength={10}
-            />
+              {/* 태그명 입력 */}
+              <TextInput
+                ref={inputRef}
+                style={styles.input}
+                value={label}
+                onChangeText={setLabel}
+                placeholder="태그 이름 (최대 10자)"
+                placeholderTextColor={Colors.textSecondary}
+                returnKeyType="done"
+                onSubmitEditing={handleAdd}
+                maxLength={10}
+              />
 
-            {/* 색상 팔레트 — 한 줄 가로 스크롤 */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="always"
-              contentContainerStyle={styles.palette}
-            >
-              {COLOR_PALETTE.map((c, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[
-                    styles.colorCircle,
-                    { backgroundColor: c.bgColor, borderColor: c.color },
-                    selectedColorIdx === idx && styles.colorCircleSelected,
-                  ]}
-                  onPress={() => setSelectedColorIdx(idx)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.colorDot, { backgroundColor: c.color }]} />
-                  {selectedColorIdx === idx && <View style={styles.selectedRing} />}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* 버튼 */}
-            <View style={styles.buttons}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
-                <Text style={styles.cancelText}>닫기</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
-                onPress={handleAdd}
-                activeOpacity={0.8}
-                disabled={!canAdd}
+              {/* 색상 팔레트 — 가로 스크롤, 키보드 열려도 탭 가능 */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="always"
+                contentContainerStyle={styles.palette}
               >
-                <Text style={styles.confirmText}>추가</Text>
-              </TouchableOpacity>
+                {COLOR_PALETTE.map((c, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[
+                      styles.colorCircle,
+                      { backgroundColor: c.bgColor, borderColor: c.color },
+                      selectedColorIdx === idx && styles.colorCircleSelected,
+                    ]}
+                    onPress={() => setSelectedColorIdx(idx)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.colorDot, { backgroundColor: c.color }]} />
+                    {selectedColorIdx === idx && <View style={styles.selectedRing} />}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* 버튼 */}
+              <View style={styles.buttons}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
+                  <Text style={styles.cancelText}>닫기</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
+                  onPress={handleAdd}
+                  activeOpacity={0.8}
+                  disabled={!canAdd}
+                >
+                  <Text style={styles.confirmText}>추가</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </ScrollView>
+          </View>
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
