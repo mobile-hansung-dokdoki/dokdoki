@@ -24,7 +24,7 @@ interface AddTodoModalProps {
 
 export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalProps) {
   const [text, setText] = useState('');
-  const [dueDate, setDueDate] = useState<string | undefined>(undefined);
+  const [dueDate, setDueDate] = useState<string | undefined>(todayString());
   const inputRef = useRef<TextInput>(null);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -33,7 +33,7 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
   useEffect(() => {
     if (visible) {
       setText('');
-      setDueDate(undefined);
+      setDueDate(todayString());
       overlayOpacity.setValue(0);
       sheetTranslateY.setValue(600);
 

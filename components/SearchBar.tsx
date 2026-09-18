@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
@@ -16,11 +16,11 @@ interface SearchBarProps {
   onChangeText: (text: string) => void;
   sortOrder: SortOrder;
   onSortChange: (sort: SortOrder) => void;
+  dropdownOpen: boolean;
+  onDropdownChange: (open: boolean) => void;
 }
 
-export default function SearchBar({ value, onChangeText, sortOrder, onSortChange }: SearchBarProps) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
+export default function SearchBar({ value, onChangeText, sortOrder, onSortChange, dropdownOpen, onDropdownChange }: SearchBarProps) {
   const currentLabel = SORT_OPTIONS.find(o => o.value === sortOrder)?.label ?? '날짜순';
 
   return (
@@ -48,7 +48,7 @@ export default function SearchBar({ value, onChangeText, sortOrder, onSortChange
         {/* 정렬 버튼 */}
         <TouchableOpacity
           style={[styles.sortBtn, dropdownOpen && styles.sortBtnActive]}
-          onPress={() => setDropdownOpen(v => !v)}
+          onPress={() => onDropdownChange(!dropdownOpen)}
           activeOpacity={0.8}
         >
           <Ionicons name="swap-vertical-outline" size={14} color={dropdownOpen ? Colors.primary : Colors.textSecondary} />
@@ -68,7 +68,7 @@ export default function SearchBar({ value, onChangeText, sortOrder, onSortChange
             <TouchableOpacity
               key={option.value}
               style={[styles.dropdownItem, idx < SORT_OPTIONS.length - 1 && styles.dropdownItemBorder]}
-              onPress={() => { onSortChange(option.value); setDropdownOpen(false); }}
+              onPress={() => { onSortChange(option.value); onDropdownChange(false); }}
               activeOpacity={0.7}
             >
               <Text style={[styles.dropdownLabel, sortOrder === option.value && styles.dropdownLabelActive]}>

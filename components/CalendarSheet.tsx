@@ -33,13 +33,8 @@ const MONTH_LABELS = [
   '7월', '8월', '9월', '10월', '11월', '12월',
 ] as const;
 
-function toDateString(year: number, month: number, day: number): string {
+function buildDateString(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
-
-function timestampToDateString(ts: number): string {
-  const d = new Date(ts);
-  return toDateString(d.getFullYear(), d.getMonth() + 1, d.getDate());
 }
 
 // Always returns exactly 42 cells (6 rows × 7 cols)
@@ -58,18 +53,18 @@ function buildCalendarDays(year: number, month: number): CalendarDay[] {
   // Leading: last few days of previous month
   for (let i = firstDay - 1; i >= 0; i--) {
     const d = prevMonthDays - i;
-    days.push({ date: d, month: 'prev', fullDate: toDateString(prevYear, prevMonth, d) });
+    days.push({ date: d, month: 'prev', fullDate: buildDateString(prevYear, prevMonth, d) });
   }
 
   // Current month
   for (let d = 1; d <= daysInMonth; d++) {
-    days.push({ date: d, month: 'current', fullDate: toDateString(year, month, d) });
+    days.push({ date: d, month: 'current', fullDate: buildDateString(year, month, d) });
   }
 
   // Trailing: first few days of next month (fill to exactly 42)
   let nextDay = 1;
   while (days.length < 42) {
-    days.push({ date: nextDay, month: 'next', fullDate: toDateString(nextYear, nextMonth, nextDay) });
+    days.push({ date: nextDay, month: 'next', fullDate: buildDateString(nextYear, nextMonth, nextDay) });
     nextDay++;
   }
 
@@ -78,7 +73,7 @@ function buildCalendarDays(year: number, month: number): CalendarDay[] {
 
 function todayDateString(): string {
   const now = new Date();
-  return toDateString(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  return buildDateString(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
 export default function CalendarSheet({ visible, onClose, todos }: CalendarSheetProps) {
@@ -91,10 +86,6 @@ export default function CalendarSheet({ visible, onClose, todos }: CalendarSheet
   const sheetTranslateY = useRef(new Animated.Value(600)).current;
 
   const todayStr = todayDateString();
-
-  const todoDateSet = new Set<string>(
-    todos.map(t => timestampToDateString(t.createdAt))
-  );
 
   // Open: overlay fades in first, then sheet slides up
   useEffect(() => {
@@ -163,7 +154,7 @@ export default function CalendarSheet({ visible, onClose, todos }: CalendarSheet
   }, []);
 
   const selectedTodos = selectedDate
-    ? todos.filter(t => timestampToDateString(t.createdAt) === selectedDate)
+    ? todos.filter(t => t.dueDate === selectedDate)
     : [];
 
   const selectedLabel = selectedDate
@@ -221,7 +212,7 @@ export default function CalendarSheet({ visible, onClose, todos }: CalendarSheet
 
             return (
               <TouchableOpacity
-                key={idx}
+                key={day.fullDate}
                 style={styles.dayCell}
                 onPress={() => handleDayPress(day)}
                 activeOpacity={isOtherMonth ? 1 : 0.7}

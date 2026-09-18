@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, FlatList, SafeAreaView, StyleSheet, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useTodos } from '../hooks/useTodos';
+import { Todo } from '../types';
 import AppHeader from '../components/AppHeader';
 import FilterTabs from '../components/FilterTabs';
 import EmptyState from '../components/EmptyState';
@@ -18,10 +19,11 @@ export default function TodoListScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
-  const [editingTodo, setEditingTodo] = useState<import('../types').Todo | null>(null);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setSortDropdownOpen(false); }} accessible={false}>
     <View style={styles.root}>
       <SafeAreaView style={styles.safeArea}>
         <AppHeader
@@ -29,7 +31,14 @@ export default function TodoListScreen() {
           onCalendarPress={() => setCalendarVisible(true)}
         />
         <FilterTabs activeFilter={filter} onFilterChange={setFilter} doneCount={doneCount} />
-        <SearchBar value={searchQuery} onChangeText={setSearchQuery} sortOrder={sortOrder} onSortChange={setSortOrder} />
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          sortOrder={sortOrder}
+          onSortChange={setSortOrder}
+          dropdownOpen={sortDropdownOpen}
+          onDropdownChange={setSortDropdownOpen}
+        />
 
         {filteredTodos.length === 0 ? (
           <EmptyState />
@@ -50,6 +59,7 @@ export default function TodoListScreen() {
             showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
           />
         )}
 
