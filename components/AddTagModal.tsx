@@ -226,8 +226,8 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
     const snapY = (toIndex - fromIndexRef.current) * ROW_HEIGHT;
 
     Animated.parallel([
-      Animated.spring(dragScale, { toValue: 1, useNativeDriver: true }),
-      Animated.spring(dragY, { toValue: snapY, useNativeDriver: true, speed: 20 }),
+      Animated.timing(dragScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+      Animated.timing(dragY, { toValue: snapY, duration: 80, useNativeDriver: true }),
     ]).start(() => {
       dragY.setValue(0);
       if (toIndex !== fromIndexRef.current) {
