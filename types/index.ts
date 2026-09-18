@@ -1,4 +1,4 @@
-export type TagId = 'work' | 'personal' | 'urgent';
+export type TagId = string;
 
 export interface Tag {
   id: TagId;

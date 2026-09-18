@@ -18,13 +18,16 @@ import { formatDateKorean, fromDateString, todayString, addDays, relativeDays } 
 import { TagId } from '../types';
 import TagSelector from './TagSelector';
 
+import { Tag } from '../types';
+
 interface AddTodoModalProps {
   visible: boolean;
   onClose: () => void;
   onAdd: (text: string, dueDate?: string, tags?: TagId[]) => void;
+  userTags: Tag[];
 }
 
-export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalProps) {
+export default function AddTodoModal({ visible, onClose, onAdd, userTags }: AddTodoModalProps) {
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState<string | undefined>(todayString());
   const [tags, setTags] = useState<TagId[]>([]);
@@ -159,7 +162,7 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
             )}
           </View>
 
-          <TagSelector selected={tags} onChange={setTags} />
+          <TagSelector tags={userTags} selected={tags} onChange={setTags} />
 
           <View style={styles.buttons}>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>

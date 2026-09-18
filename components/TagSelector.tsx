@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { TagId } from '../types';
-import { TAGS } from '../constants/tags';
+import { Tag, TagId } from '../types';
 import { Colors } from '../constants/colors';
 
 interface TagSelectorProps {
+  tags: Tag[];
   selected: TagId[];
   onChange: (tags: TagId[]) => void;
 }
 
-export default function TagSelector({ selected, onChange }: TagSelectorProps) {
+export default function TagSelector({ tags, selected, onChange }: TagSelectorProps) {
   const toggle = (id: TagId) => {
     onChange(
       selected.includes(id)
@@ -20,7 +20,7 @@ export default function TagSelector({ selected, onChange }: TagSelectorProps) {
 
   return (
     <View style={styles.row}>
-      {TAGS.map(tag => {
+      {tags.map(tag => {
         const isSelected = selected.includes(tag.id);
         return (
           <TouchableOpacity
@@ -45,6 +45,7 @@ export default function TagSelector({ selected, onChange }: TagSelectorProps) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   chip: {

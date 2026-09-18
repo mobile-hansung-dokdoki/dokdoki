@@ -4,17 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { Todo } from '../types';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
+import { Tag } from '../types';
 import { formatDateKorean, fromDateString, todayString } from '../utils/date';
-import { TAG_MAP } from '../constants/tags';
 
 interface TodoItemProps {
   todo: Todo;
   onToggle: (id: string) => void;
   onEdit: (todo: Todo) => void;
   onDelete: (id: string) => void;
+  tagMap: Record<string, Tag>;
 }
 
-export default function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
+export default function TodoItem({ todo, onToggle, onEdit, onDelete, tagMap }: TodoItemProps) {
   const [expanded, setExpanded] = useState(false);
   const isToday = !!todo.dueDate && todo.dueDate === todayString();
 
@@ -44,7 +45,8 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemP
         {todo.tags && todo.tags.length > 0 && (
           <View style={styles.tagRow}>
             {todo.tags.map(tagId => {
-              const tag = TAG_MAP[tagId];
+              const tag = tagMap[tagId];
+              if (!tag) return null;
               return (
                 <View key={tagId} style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
                   <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>

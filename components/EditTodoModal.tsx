@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { formatDateKorean, fromDateString, todayString, addDays } from '../utils/date';
-import { Todo, TagId } from '../types';
+import { Todo, TagId, Tag } from '../types';
 import TagSelector from './TagSelector';
 
 interface EditTodoModalProps {
@@ -23,9 +23,10 @@ interface EditTodoModalProps {
   todo: Todo | null;
   onClose: () => void;
   onEdit: (id: string, text: string, dueDate?: string, tags?: TagId[]) => void;
+  userTags: Tag[];
 }
 
-export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTodoModalProps) {
+export default function EditTodoModal({ visible, todo, onClose, onEdit, userTags }: EditTodoModalProps) {
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
   const [tags, setTags] = useState<TagId[]>([]);
@@ -153,7 +154,7 @@ export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTo
               )}
             </View>
 
-            <TagSelector selected={tags} onChange={setTags} />
+            <TagSelector tags={userTags} selected={tags} onChange={setTags} />
 
             <View style={styles.buttons}>
               <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>

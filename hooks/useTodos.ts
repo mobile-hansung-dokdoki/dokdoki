@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
-import { Todo, Filter, SortOrder, TagId } from '../types';
+import { Todo, Filter, SortOrder, TagId, Tag } from '../types';
 import { formatDateKorean, fromDateString } from '../utils/date';
+import { DEFAULT_TAGS } from '../constants/tags';
 
 const generateId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 9)}`;
@@ -10,7 +11,8 @@ export function useTodos() {
   const [filter, setFilter] = useState<Filter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('createdDesc');
-  const [activeTag, setActiveTag] = useState<TagId | null>(null);
+  const [activeTags, setActiveTags] = useState<TagId[]>([]);
+  const [userTags, setUserTags] = useState<Tag[]>(DEFAULT_TAGS);
 
   const addTodo = useCallback((text: string, dueDate?: string, tags?: TagId[]) => {
     const trimmed = text.trim();
@@ -46,11 +48,24 @@ export function useTodos() {
     setTodos(prev => prev.filter(todo => todo.id !== id));
   }, []);
 
+  const addUserTag = useCallback((label: string, color: string, bgColor: string) => {
+    const id = generateId();
+    setUserTags(prev => [...prev, { id, label, color, bgColor }]);
+  }, []);
+
+  const toggleActiveTag = useCallback((tagId: TagId) => {
+    setActiveTags(prev =>
+      prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
+    );
+  }, []);
+
+  const tagMap: Record<string, Tag> = Object.fromEntries(userTags.map(t => [t.id, t]));
+
   const filteredTodos = todos
     .filter(todo => {
       if (filter === 'active' && todo.done) return false;
       if (filter === 'done' && !todo.done) return false;
-      if (activeTag && !todo.tags?.includes(activeTag)) return false;
+      if (activeTags.length > 0 && !activeTags.every(t => todo.tags?.includes(t))) return false;
 
       const q = searchQuery.trim();
       if (q) {
@@ -66,7 +81,6 @@ export function useTodos() {
     .sort((a, b) => {
       if (sortOrder === 'createdDesc') return b.createdAt - a.createdAt;
       if (sortOrder === 'createdAsc') return a.createdAt - b.createdAt;
-      // dueDate 순: 마감일 없는 항목은 맨 뒤로
       if (!a.dueDate && !b.dueDate) return b.createdAt - a.createdAt;
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
@@ -85,8 +99,12 @@ export function useTodos() {
     setSearchQuery,
     sortOrder,
     setSortOrder,
-    activeTag,
-    setActiveTag,
+    activeTags,
+    setActiveTags,
+    toggleActiveTag,
+    userTags,
+    tagMap,
+    addUserTag,
     addTodo,
     toggleTodo,
     editTodo,

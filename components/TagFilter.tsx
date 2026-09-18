@@ -1,62 +1,78 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { TagId } from '../types';
-import { TAGS } from '../constants/tags';
+import { Ionicons } from '@expo/vector-icons';
+import { Tag, TagId } from '../types';
 import { Spacing } from '../constants/spacing';
 import { Colors } from '../constants/colors';
 
 interface TagFilterProps {
-  activeTag: TagId | null;
-  onTagChange: (tag: TagId | null) => void;
+  tags: Tag[];
+  activeTags: TagId[];
+  onTagToggle: (tagId: TagId) => void;
+  onClearTags: () => void;
+  onAddPress: () => void;
 }
 
-export default function TagFilter({ activeTag, onTagChange }: TagFilterProps) {
+export default function TagFilter({ tags, activeTags, onTagToggle, onClearTags, onAddPress }: TagFilterProps) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-    >
-      <TouchableOpacity
-        style={[styles.chip, activeTag === null && styles.chipActive]}
-        onPress={() => onTagChange(null)}
-        activeOpacity={0.7}
+    <View style={styles.container}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
       >
-        <Text style={[styles.chipText, activeTag === null && styles.chipTextActive]}>
-          전체
-        </Text>
-      </TouchableOpacity>
+        {/* 전체 칩 */}
+        <TouchableOpacity
+          style={[styles.chip, activeTags.length === 0 && styles.chipAllActive]}
+          onPress={onClearTags}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.chipText, activeTags.length === 0 && styles.chipTextAllActive]}>
+            전체
+          </Text>
+        </TouchableOpacity>
 
-      {TAGS.map(tag => {
-        const isActive = activeTag === tag.id;
-        return (
-          <TouchableOpacity
-            key={tag.id}
-            style={[
-              styles.chip,
-              isActive && { backgroundColor: tag.bgColor, borderColor: tag.color },
-            ]}
-            onPress={() => onTagChange(isActive ? null : tag.id)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.chipText, isActive && { color: tag.color, fontWeight: '600' }]}>
-              {tag.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
+        {tags.map(tag => {
+          const isActive = activeTags.includes(tag.id);
+          return (
+            <TouchableOpacity
+              key={tag.id}
+              style={[
+                styles.chip,
+                isActive && { backgroundColor: tag.bgColor, borderColor: tag.color },
+              ]}
+              onPress={() => onTagToggle(tag.id)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.chipText, isActive && { color: tag.color, fontWeight: '600' }]}>
+                {tag.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {/* 태그 추가 버튼 (고정) */}
+      <TouchableOpacity style={styles.addBtn} onPress={onAddPress} activeOpacity={0.7}>
+        <Ionicons name="add" size={18} color={Colors.textSecondary} />
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 0,
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
+  scroll: {
+    flex: 1,
+  },
   content: {
-    paddingHorizontal: Spacing.screenHorizontal,
+    paddingLeft: Spacing.screenHorizontal,
+    paddingRight: 8,
     gap: 8,
     flexDirection: 'row',
     alignItems: 'center',
@@ -69,7 +85,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
   },
-  chipActive: {
+  chipAllActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
@@ -78,8 +94,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.textSecondary,
   },
-  chipTextActive: {
+  chipTextAllActive: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  addBtn: {
+    width: 36,
+    height: 36,
+    marginRight: Spacing.screenHorizontal,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
