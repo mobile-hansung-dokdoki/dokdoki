@@ -84,7 +84,13 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
         style={styles.kvView}
       >
         <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
-          <View style={styles.sheet}>
+          <ScrollView
+            style={styles.sheet}
+            contentContainerStyle={styles.sheetContent}
+            scrollEnabled={false}
+            keyboardShouldPersistTaps="always"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.handle} />
             <Text style={styles.title}>태그 관리</Text>
 
@@ -98,7 +104,8 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
                   <ScrollView
                     style={styles.tagList}
                     showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
+                    keyboardShouldPersistTaps="always"
+                    nestedScrollEnabled
                   >
                     {userTags.map(tag => (
                       <View key={tag.id} style={styles.tagRow}>
@@ -179,7 +186,7 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
                 <Text style={styles.confirmText}>추가</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
@@ -195,16 +202,18 @@ const styles = StyleSheet.create({
   kvView: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
+    backgroundColor: 'transparent',
   },
   sheet: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+  },
+  sheetContent: {
     paddingHorizontal: Spacing.screenHorizontal,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 40 : 28,
     gap: 14,
-    maxHeight: '85%',
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
