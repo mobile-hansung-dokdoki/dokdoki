@@ -83,9 +83,11 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
         <Text style={styles.title}>태그 관리</Text>
 
         {/* 기존 태그 목록 */}
-        {userTags.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>등록된 태그</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>등록된 태그</Text>
+          {userTags.length === 0 ? (
+            <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
+          ) : (
             <ScrollView
               style={styles.tagList}
               showsVerticalScrollIndicator={false}
@@ -106,8 +108,8 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
                 </View>
               ))}
             </ScrollView>
-          </View>
-        )}
+          )}
+        </View>
 
         <View style={styles.divider} />
 
@@ -213,6 +215,11 @@ const styles = StyleSheet.create({
   },
   tagList: {
     maxHeight: 140,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    paddingVertical: 8,
   },
   tagRow: {
     flexDirection: 'row',
