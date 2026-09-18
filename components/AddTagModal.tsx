@@ -140,21 +140,25 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
 
         {/* 색상 팔레트 */}
         <View style={styles.palette}>
-          {COLOR_PALETTE.map((c, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[
-                styles.colorCircle,
-                { backgroundColor: c.bgColor, borderColor: c.color },
-                selectedColorIdx === idx && styles.colorCircleSelected,
-              ]}
-              onPress={() => setSelectedColorIdx(idx)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.colorDot, { backgroundColor: c.color }]} />
-              {selectedColorIdx === idx && <View style={styles.selectedRing} />}
-            </TouchableOpacity>
-          ))}
+          {COLOR_PALETTE.map((c, idx) => {
+            const isSelected = selectedColorIdx === idx;
+            return (
+              <TouchableOpacity
+                key={idx}
+                style={[
+                  styles.colorCircle,
+                  { backgroundColor: c.color },
+                  isSelected && styles.colorCircleSelected,
+                ]}
+                onPress={() => setSelectedColorIdx(idx)}
+                activeOpacity={0.75}
+              >
+                {isSelected && (
+                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* 버튼 */}
@@ -269,22 +273,11 @@ const styles = StyleSheet.create({
   colorCircle: {
     width: 40, height: 40,
     borderRadius: 20,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   colorCircleSelected: {
     borderWidth: 3,
-  },
-  colorDot: {
-    width: 16, height: 16,
-    borderRadius: 8,
-  },
-  selectedRing: {
-    position: 'absolute',
-    top: -4, left: -4, right: -4, bottom: -4,
-    borderRadius: 24,
-    borderWidth: 2,
     borderColor: Colors.textPrimary,
   },
   buttons: {
