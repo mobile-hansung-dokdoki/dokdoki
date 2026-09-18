@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Animated,
@@ -78,102 +79,109 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, userTag
         <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]} />
       </TouchableWithoutFeedback>
 
-      <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}>
-        <View style={styles.handle} />
-        <Text style={styles.title}>태그 관리</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kvView}
+      >
+        <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
+          <View style={styles.sheet}>
+            <View style={styles.handle} />
+            <Text style={styles.title}>태그 관리</Text>
 
-        {/* 기존 태그 목록 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>등록된 태그</Text>
-          <View style={styles.tagListContainer}>
-            {userTags.length === 0 ? (
-              <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
-            ) : (
-              <ScrollView
-                style={styles.tagList}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
+            {/* 기존 태그 목록 */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>등록된 태그</Text>
+              <View style={styles.tagListContainer}>
+                {userTags.length === 0 ? (
+                  <Text style={styles.emptyText}>등록된 태그가 없습니다</Text>
+                ) : (
+                  <ScrollView
+                    style={styles.tagList}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {userTags.map(tag => (
+                      <View key={tag.id} style={styles.tagRow}>
+                        <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
+                          <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => onDelete(tag.id)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* 새 태그 추가 */}
+            <Text style={styles.sectionLabel}>새 태그 추가</Text>
+
+            {/* 미리보기 */}
+            <View style={styles.previewRow}>
+              <View style={[styles.previewChip, { backgroundColor: previewBg }]}>
+                <Text style={[styles.previewChipText, { color: previewColor }]}>
+                  {label.trim() || '태그명'}
+                </Text>
+              </View>
+            </View>
+
+            {/* 태그명 입력 */}
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={label}
+              onChangeText={setLabel}
+              placeholder="태그 이름 (최대 10자)"
+              placeholderTextColor={Colors.textSecondary}
+              returnKeyType="done"
+              onSubmitEditing={handleAdd}
+              maxLength={10}
+            />
+
+            {/* 색상 팔레트 */}
+            <View style={styles.palette}>
+              {COLOR_PALETTE.map((c, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.colorCircle,
+                    { backgroundColor: c.bgColor, borderColor: c.color },
+                    selectedColorIdx === idx && styles.colorCircleSelected,
+                  ]}
+                  onPress={() => setSelectedColorIdx(idx)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.colorDot, { backgroundColor: c.color }]} />
+                  {selectedColorIdx === idx && <View style={styles.selectedRing} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* 버튼 */}
+            <View style={styles.buttons}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
+                <Text style={styles.cancelText}>닫기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
+                onPress={handleAdd}
+                activeOpacity={0.8}
+                disabled={!canAdd}
               >
-                {userTags.map(tag => (
-                  <View key={tag.id} style={styles.tagRow}>
-                    <View style={[styles.tagChip, { backgroundColor: tag.bgColor }]}>
-                      <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.label}</Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => onDelete(tag.id)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="trash-outline" size={18} color={Colors.textSecondary} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            )}
+                <Text style={styles.confirmText}>추가</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* 새 태그 추가 */}
-        <Text style={styles.sectionLabel}>새 태그 추가</Text>
-
-        {/* 미리보기 */}
-        <View style={styles.previewRow}>
-          <View style={[styles.previewChip, { backgroundColor: previewBg }]}>
-            <Text style={[styles.previewChipText, { color: previewColor }]}>
-              {label.trim() || '태그명'}
-            </Text>
-          </View>
-        </View>
-
-        {/* 태그명 입력 */}
-        <TextInput
-          ref={inputRef}
-          style={styles.input}
-          value={label}
-          onChangeText={setLabel}
-          placeholder="태그 이름 (최대 10자)"
-          placeholderTextColor={Colors.textSecondary}
-          returnKeyType="done"
-          onSubmitEditing={handleAdd}
-          maxLength={10}
-        />
-
-        {/* 색상 팔레트 */}
-        <View style={styles.palette}>
-          {COLOR_PALETTE.map((c, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[
-                styles.colorCircle,
-                { backgroundColor: c.bgColor, borderColor: c.color },
-                selectedColorIdx === idx && styles.colorCircleSelected,
-              ]}
-              onPress={() => setSelectedColorIdx(idx)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.colorDot, { backgroundColor: c.color }]} />
-              {selectedColorIdx === idx && <View style={styles.selectedRing} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* 버튼 */}
-        <View style={styles.buttons}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
-            <Text style={styles.cancelText}>닫기</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.confirmBtn, !canAdd && styles.confirmDisabled]}
-            onPress={handleAdd}
-            activeOpacity={0.8}
-            disabled={!canAdd}
-          >
-            <Text style={styles.confirmText}>추가</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -184,9 +192,11 @@ const styles = StyleSheet.create({
     top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: Colors.overlay,
   },
-  sheet: {
+  kvView: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
+  },
+  sheet: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
