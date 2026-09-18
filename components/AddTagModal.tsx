@@ -12,7 +12,10 @@ import {
   StyleSheet,
   Animated,
   Platform,
+  Dimensions,
 } from 'react-native';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 import { Ionicons } from '@expo/vector-icons';
 import { Tag } from '../types';
 import { Colors } from '../constants/colors';
@@ -383,7 +386,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '92%',
+    maxHeight: SCREEN_HEIGHT * 0.92,
   },
   sheetContent: {
     paddingHorizontal: Spacing.screenHorizontal,
