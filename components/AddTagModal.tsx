@@ -223,13 +223,19 @@ export default function AddTagModal({ visible, onClose, onAdd, onDelete, onReord
   const handleDragEnd = useCallback((dy: number) => {
     const toIndex = Math.max(0, Math.min(userTags.length - 1,
       Math.round(fromIndexRef.current + dy / ROW_HEIGHT)));
-    Animated.spring(dragScale, { toValue: 1, useNativeDriver: true }).start();
-    dragY.setValue(0);
-    if (toIndex !== fromIndexRef.current) {
-      onReorder(fromIndexRef.current, toIndex);
-    }
-    setDragInfo(null);
-  }, [userTags.length, dragScale, onReorder]);
+    const snapY = (toIndex - fromIndexRef.current) * ROW_HEIGHT;
+
+    Animated.parallel([
+      Animated.spring(dragScale, { toValue: 1, useNativeDriver: true }),
+      Animated.spring(dragY, { toValue: snapY, useNativeDriver: true, speed: 20 }),
+    ]).start(() => {
+      dragY.setValue(0);
+      if (toIndex !== fromIndexRef.current) {
+        onReorder(fromIndexRef.current, toIndex);
+      }
+      setDragInfo(null);
+    });
+  }, [userTags.length, dragScale, dragY, onReorder]);
 
   const getShiftY = (index: number): number => {
     if (!dragInfo || index === dragInfo.fromIndex) return 0;
