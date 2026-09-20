@@ -14,17 +14,20 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
+import CategoryPicker from './CategoryPicker';
+import { TodoCategory } from '../types';
 import { formatDateKorean, fromDateString, todayString, addDays, relativeDays } from '../utils/date';
 
 interface AddTodoModalProps {
   visible: boolean;
   onClose: () => void;
-  onAdd: (text: string, dueDate?: string) => void;
+  onAdd: (text: string, dueDate?: string, category?: TodoCategory) => void;
 }
 
 export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalProps) {
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
+  const [category, setCategory] = useState<TodoCategory>('none');
   const inputRef = useRef<TextInput>(null);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -34,6 +37,7 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
     if (visible) {
       setText('');
       setDueDate(undefined);
+      setCategory('none');
       overlayOpacity.setValue(0);
       sheetTranslateY.setValue(600);
 
@@ -81,7 +85,7 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
 
   const handleAdd = () => {
     if (!canAdd) return;
-    onAdd(trimmedText, dueDate);
+    onAdd(trimmedText, dueDate, category);
     handleClose();
   };
 
@@ -154,6 +158,8 @@ export default function AddTodoModal({ visible, onClose, onAdd }: AddTodoModalPr
               </TouchableOpacity>
             )}
           </View>
+
+          <CategoryPicker value={category} onChange={setCategory} />
 
           <View style={styles.buttons}>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>

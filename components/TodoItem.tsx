@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Todo } from '../types';
 import { Colors } from '../constants/colors';
+import { getCategory } from '../constants/categories';
 import { Spacing } from '../constants/spacing';
 import { formatDateKorean, fromDateString } from '../utils/date';
 
@@ -14,6 +15,7 @@ interface TodoItemProps {
 }
 
 export default function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
+  const category = getCategory(todo.category);
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -27,6 +29,10 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemP
       </TouchableOpacity>
 
       <View style={styles.textBlock}>
+        <View style={[styles.categoryBadge, { backgroundColor: category.backgroundColor }]}>
+          <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
+          <Text style={[styles.categoryText, { color: category.color }]}>{category.label}</Text>
+        </View>
         <Text
           style={[styles.text, todo.done && styles.textDone]}
           numberOfLines={2}
@@ -88,6 +94,12 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  categoryBadge: {
+    alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center',
+    gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginBottom: 3,
+  },
+  categoryDot: { width: 6, height: 6, borderRadius: 3 },
+  categoryText: { fontSize: 12, fontWeight: '600' },
   text: {
     fontSize: 16,
     color: Colors.textPrimary,
