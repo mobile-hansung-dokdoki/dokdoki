@@ -15,18 +15,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { formatDateKorean, fromDateString, todayString, addDays } from '../utils/date';
-import { Todo } from '../types';
+import { Todo, TagId, Tag } from '../types';
+import TagSelector from './TagSelector';
 
 interface EditTodoModalProps {
   visible: boolean;
   todo: Todo | null;
   onClose: () => void;
-  onEdit: (id: string, text: string, dueDate?: string) => void;
+  onEdit: (id: string, text: string, dueDate?: string, tags?: TagId[]) => void;
+  userTags: Tag[];
 }
 
-export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTodoModalProps) {
+export default function EditTodoModal({ visible, todo, onClose, onEdit, userTags }: EditTodoModalProps) {
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
+  const [tags, setTags] = useState<TagId[]>([]);
   const inputRef = useRef<TextInput>(null);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -36,6 +39,7 @@ export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTo
     if (visible && todo) {
       setText(todo.text);
       setDueDate(todo.dueDate);
+      setTags(todo.tags ?? []);
       overlayOpacity.setValue(0);
       sheetTranslateY.setValue(600);
 
@@ -79,7 +83,7 @@ export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTo
 
   const handleSave = () => {
     if (!text.trim() || !todo) return;
-    onEdit(todo.id, text.trim(), dueDate);
+    onEdit(todo.id, text.trim(), dueDate, tags.length > 0 ? tags : undefined);
     handleClose();
   };
 
@@ -149,6 +153,8 @@ export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTo
                 </TouchableOpacity>
               )}
             </View>
+
+            <TagSelector tags={userTags} selected={tags} onChange={setTags} />
 
             <View style={styles.buttons}>
               <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
