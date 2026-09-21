@@ -14,19 +14,22 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
+import CategoryPicker from './CategoryPicker';
+import { normalizeCategory } from '../constants/categories';
 import { formatDateKorean, fromDateString, todayString, addDays } from '../utils/date';
-import { Todo } from '../types';
+import { Todo, TodoCategory } from '../types';
 
 interface EditTodoModalProps {
   visible: boolean;
   todo: Todo | null;
   onClose: () => void;
-  onEdit: (id: string, text: string, dueDate?: string) => void;
+  onEdit: (id: string, text: string, dueDate?: string, category?: TodoCategory) => void;
 }
 
 export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTodoModalProps) {
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
+  const [category, setCategory] = useState<TodoCategory>('none');
   const inputRef = useRef<TextInput>(null);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -36,6 +39,7 @@ export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTo
     if (visible && todo) {
       setText(todo.text);
       setDueDate(todo.dueDate);
+      setCategory(normalizeCategory(todo.category));
       overlayOpacity.setValue(0);
       sheetTranslateY.setValue(600);
 
@@ -79,7 +83,7 @@ export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTo
 
   const handleSave = () => {
     if (!text.trim() || !todo) return;
-    onEdit(todo.id, text.trim(), dueDate);
+    onEdit(todo.id, text.trim(), dueDate, category);
     handleClose();
   };
 
@@ -149,6 +153,8 @@ export default function EditTodoModal({ visible, todo, onClose, onEdit }: EditTo
                 </TouchableOpacity>
               )}
             </View>
+
+            <CategoryPicker value={category} onChange={setCategory} />
 
             <View style={styles.buttons}>
               <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
