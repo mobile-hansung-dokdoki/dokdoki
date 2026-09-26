@@ -305,10 +305,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayCircleSelected: { backgroundColor: Colors.primary },
+  dayCircleSelected: { borderWidth: 2, borderColor: Colors.primary },
   dayCircleToday: { borderWidth: 2, borderColor: Colors.blue },
   dayNum: { fontSize: 14, color: Colors.textPrimary },
-  dayNumSelected: { color: '#FFFFFF', fontWeight: '700' },
+  dayNumSelected: { color: Colors.primary, fontWeight: '700' },
   dayNumSun: { color: Colors.red },
   dayNumSat: { color: Colors.blue },
   dot: {
