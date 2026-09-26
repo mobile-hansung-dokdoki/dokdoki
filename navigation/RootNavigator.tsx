@@ -4,19 +4,29 @@ import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Todo } from '../types';
+import { Todo, Category } from '../types';
 import { Colors } from '../theme/colors';
 import HomeScreen from '../screens/HomeScreen';
 import TodoFormScreen from '../screens/TodoFormScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import ReportScreen from '../screens/ReportScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import SearchScreen from '../screens/SearchScreen';
+import CategoryListScreen from '../screens/CategoryListScreen';
+import CategoryDetailScreen from '../screens/CategoryDetailScreen';
+import OcrIntroScreen from '../screens/OcrIntroScreen';
+import OcrResultScreen from '../screens/OcrResultScreen';
 
 export type RootStackParamList = {
   Tabs: undefined;
   TodoForm: { todo?: Todo };
   Home: undefined;
   Report: undefined;
+  Search: undefined;
+  CategoryList: undefined;
+  CategoryDetail: { category: Category };
+  OcrIntro: undefined;
+  OcrResult: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -121,6 +131,11 @@ export default function RootNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={TabNavigator} />
         <Stack.Screen name="TodoForm" component={TodoFormScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="CategoryList" component={CategoryListScreen} />
+        <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
+        <Stack.Screen name="OcrIntro" component={OcrIntroScreen} />
+        <Stack.Screen name="OcrResult" component={OcrResultScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

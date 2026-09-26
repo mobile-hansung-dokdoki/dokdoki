@@ -7,40 +7,21 @@ import {
   SafeAreaView,
   StyleSheet,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTodosContext } from '../navigation/TodosContext';
+import { Todo } from '../types';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { CategoryColors } from '../theme/colors';
+import { RootStackParamList } from '../navigation/RootNavigator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CELL_WIDTH = (SCREEN_WIDTH - Spacing.screenHorizontal * 2) / 7;
 const CELL_HEIGHT = 44;
-
-type MockTodoItem = {
-  time: string;
-  title: string;
-  category: string;
-  done: boolean;
-};
-
-const MOCK_DATE_TODOS: Record<string, MockTodoItem[]> = {
-  '2026-09-11': [
-    { time: '09:00', title: '영어 단어장 복습', category: '학습', done: false },
-  ],
-  '2026-09-14': [
-    { time: '10:00', title: '자료구조 과제 제출', category: '과제', done: true },
-    { time: '14:00', title: '팀 회의 준비', category: '업무', done: false },
-    { time: '17:00', title: '헬스장 가기', category: '개인 루틴', done: false },
-  ],
-  '2026-09-20': [
-    { time: '11:00', title: 'React Native 강의', category: '학습', done: false },
-  ],
-  '2026-09-26': [
-    { time: '09:00', title: '주간 리뷰', category: '업무', done: false },
-    { time: '14:00', title: '알고리즘 문제', category: '학습', done: true },
-  ],
-};
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -70,7 +51,12 @@ function formatSelectedDate(dateStr: string): string {
   return `${m}월 ${d}일 (${dayOfWeek})`;
 }
 
+type CalendarNavProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function CalendarScreen() {
+  const navigation = useNavigation<CalendarNavProp>();
+  const { todos, toggleTodo, deleteTodo } = useTodosContext();
+
   const today = todayString();
   const todayParts = today.split('-').map(Number);
   const [currentYear, setCurrentYear] = useState(todayParts[0]);
@@ -111,7 +97,23 @@ export default function CalendarScreen() {
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
-  const selectedTodos = MOCK_DATE_TODOS[selectedDate] ?? [];
+  // 날짜별 할 일 계산 (실제 todos 사용)
+  const getTodosForDate = (dateStr: string): Todo[] =>
+    todos.filter(t => t.date === dateStr);
+
+  const selectedTodos = getTodosForDate(selectedDate);
+
+  const handleMorePress = (todo: Todo) => {
+    Alert.alert(todo.title, undefined, [
+      { text: '수정', onPress: () => navigation.navigate('TodoForm', { todo }) },
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: () => deleteTodo(todo.id),
+      },
+      { text: '취소', style: 'cancel' },
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -161,7 +163,7 @@ export default function CalendarScreen() {
             const dateStr = padDate(currentYear, currentMonth, day);
             const isSelected = dateStr === selectedDate;
             const isToday = dateStr === today;
-            const hasTodos = Boolean(MOCK_DATE_TODOS[dateStr]);
+            const hasTodos = getTodosForDate(dateStr).length > 0;
             const colIndex = idx % 7;
 
             return (
@@ -210,24 +212,36 @@ export default function CalendarScreen() {
               {selectedTodos.map((item, idx) => {
                 const catColor = CategoryColors[item.category] ?? CategoryColors['기타'];
                 return (
-                  <View
-                    key={`${item.time}-${idx}`}
+                  <TouchableOpacity
+                    key={item.id}
                     style={[styles.todoRow, idx < selectedTodos.length - 1 && styles.todoRowBorder]}
+                    onPress={() => navigation.navigate('TodoForm', { todo: item })}
+                    activeOpacity={0.7}
                   >
-                    <Text style={styles.todoTime}>{item.time}</Text>
-                    <View style={[styles.checkCircle, item.done && styles.checkCircleDone]}>
-                      {item.done && (
-                        <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                      )}
-                    </View>
-                    <Text style={[styles.todoTitle, item.done && styles.todoTitleDone]}>
+                    {item.time !== undefined && (
+                      <Text style={styles.todoTime}>{item.time}</Text>
+                    )}
+                    <TouchableOpacity
+                      onPress={() => toggleTodo(item.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <View style={[styles.checkCircle, item.done && styles.checkCircleDone]}>
+                        {item.done && (
+                          <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                    <Text style={[styles.todoTitle, item.done && styles.todoTitleDone]} numberOfLines={1}>
                       {item.title}
                     </Text>
                     <View style={[styles.catDot, { backgroundColor: catColor.color }]} />
-                    <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <TouchableOpacity
+                      onPress={() => handleMorePress(item)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
                       <Ionicons name="ellipsis-vertical" size={16} color={Colors.textTertiary} />
                     </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>

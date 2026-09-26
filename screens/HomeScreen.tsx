@@ -90,11 +90,11 @@ export default function HomeScreen() {
         </View>
 
         {/* 검색바 */}
-        <View style={styles.searchBar}>
+        <TouchableOpacity style={styles.searchBar} onPress={() => navigation.navigate('Search')} activeOpacity={0.7}>
           <Ionicons name="search-outline" size={18} color={Colors.textTertiary} />
           <Text style={styles.searchPlaceholder}>할 일, 메모, 태그 검색</Text>
           <Ionicons name="mic-outline" size={18} color={Colors.textTertiary} />
-        </View>
+        </TouchableOpacity>
 
         {/* 카테고리 필터 */}
         <ScrollView
@@ -139,7 +139,7 @@ export default function HomeScreen() {
               <Text style={styles.ocrTitle}>AI 메모 스캔</Text>
               <Text style={styles.ocrSub}>손글씨·이미지 속 할 일을 변환해 만들어 보세요.</Text>
             </View>
-            <TouchableOpacity style={styles.ocrBtn} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.ocrBtn} activeOpacity={0.8} onPress={() => navigation.navigate('OcrIntro')}>
               <Text style={styles.ocrBtnText}>📷 스캔하기</Text>
             </TouchableOpacity>
           </View>

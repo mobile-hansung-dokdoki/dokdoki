@@ -102,7 +102,12 @@ export default function TodoFormScreen({ route, navigation }: Props) {
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEdit ? '할 일 수정' : '할 일 추가'}</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity onPress={() => navigation.navigate('OcrIntro')}>
+          <View style={styles.scanBtn}>
+            <Ionicons name="scan-outline" size={16} color={Colors.primary} />
+            <Text style={styles.scanBtnText}>AI 스캔</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -295,4 +300,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF5F5',
   },
   deleteBtnText: { fontSize: 15, fontWeight: '600', color: Colors.red },
+  scanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    gap: 4,
+  },
+  scanBtnText: { fontSize: 13, fontWeight: '500', color: Colors.primary },
 });

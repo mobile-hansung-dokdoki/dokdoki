@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,29 +8,43 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
+import Toast from '../components/Toast';
 
 type SettingItem = {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   right?: string;
+  action: 'report' | 'wip';
 };
 
 const SETTING_ITEMS: SettingItem[] = [
-  { icon: 'notifications-outline', label: '알림 설정' },
-  { icon: 'cloud-outline', label: '동기화 설정' },
-  { icon: 'bar-chart-outline', label: '생산성 리포트' },
-  { icon: 'flag-outline', label: '목표 설정' },
+  { icon: 'notifications-outline', label: '알림 설정',   action: 'wip' },
+  { icon: 'cloud-outline',          label: '동기화 설정', action: 'wip' },
+  { icon: 'bar-chart-outline',      label: '생산성 리포트', action: 'report' },
+  { icon: 'flag-outline',           label: '목표 설정',  action: 'wip' },
 ];
 
 const INFO_ITEMS: SettingItem[] = [
-  { icon: 'information-circle-outline', label: '앱 정보', right: 'v1.0.0' },
-  { icon: 'document-text-outline', label: '개인정보 처리방침' },
-  { icon: 'help-circle-outline', label: '도움말' },
+  { icon: 'information-circle-outline', label: '앱 정보',          right: 'v1.0.0', action: 'wip' },
+  { icon: 'document-text-outline',      label: '개인정보 처리방침', action: 'wip' },
+  { icon: 'help-circle-outline',        label: '도움말',           action: 'wip' },
 ];
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
+  const [toastVisible, setToastVisible] = useState(false);
+
+  const handleItemPress = (action: SettingItem['action']) => {
+    if (action === 'report') {
+      navigation.navigate('Tabs', { screen: 'Report' });
+    } else {
+      setToastVisible(true);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -71,6 +85,7 @@ export default function ProfileScreen() {
               key={item.label}
               style={[styles.menuRow, idx < SETTING_ITEMS.length - 1 && styles.menuRowBorder]}
               activeOpacity={0.7}
+              onPress={() => handleItemPress(item.action)}
             >
               <Ionicons name={item.icon} size={20} color={Colors.textSecondary} />
               <Text style={styles.menuLabel}>{item.label}</Text>
@@ -87,6 +102,7 @@ export default function ProfileScreen() {
               key={item.label}
               style={[styles.menuRow, idx < INFO_ITEMS.length - 1 && styles.menuRowBorder]}
               activeOpacity={0.7}
+              onPress={() => handleItemPress(item.action)}
             >
               <Ionicons name={item.icon} size={20} color={Colors.textSecondary} />
               <Text style={styles.menuLabel}>{item.label}</Text>
@@ -101,6 +117,12 @@ export default function ProfileScreen() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      <Toast
+        message="준비 중이에요."
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
     </SafeAreaView>
   );
 }
