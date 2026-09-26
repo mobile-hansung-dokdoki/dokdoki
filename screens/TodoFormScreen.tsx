@@ -120,6 +120,20 @@ export default function TodoFormScreen({ route, navigation }: Props) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* AI 스캔 배너 (추가 모드에서만) */}
+          {!isEdit && (
+            <TouchableOpacity style={styles.scanBanner} onPress={() => navigation.navigate('OcrIntro')} activeOpacity={0.8}>
+              <View style={styles.scanBannerLeft}>
+                <Ionicons name="scan-outline" size={22} color={Colors.primary} />
+                <View style={styles.scanBannerText}>
+                  <Text style={styles.scanBannerTitle}>AI 메모 스캔으로 추가</Text>
+                  <Text style={styles.scanBannerSub}>손글씨·이미지를 자동으로 할 일로 변환해요</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+
           {/* 제목 */}
           <View style={styles.field}>
             <Text style={styles.label}>
@@ -257,6 +271,20 @@ const styles = StyleSheet.create({
     gap: 20,
     paddingBottom: 40,
   },
+  scanBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.cardRadius,
+    padding: 14,
+  },
+  scanBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  scanBannerText: { gap: 2, flex: 1 },
+  scanBannerTitle: { fontSize: 14, fontWeight: '600', color: Colors.primary },
+  scanBannerSub: { fontSize: 12, color: Colors.textSecondary },
   field: { gap: 8 },
   label: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
   input: {

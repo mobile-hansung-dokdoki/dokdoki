@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,24 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTodosContext } from '../navigation/TodosContext';
+import { Todo } from '../types';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import Toast from '../components/Toast';
+
+function calcStreak(todos: Todo[]): number {
+  const doneDates = new Set(todos.filter(t => t.done && t.date).map(t => t.date!));
+  let s = 0;
+  const d = new Date();
+  for (let i = 0; i < 365; i++) {
+    const str = d.toISOString().split('T')[0];
+    if (doneDates.has(str)) { s++; d.setDate(d.getDate() - 1); }
+    else if (i === 0) { d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return s;
+}
 
 type SettingItem = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -35,7 +50,14 @@ const INFO_ITEMS: SettingItem[] = [
 
 export default function ProfileScreen() {
   const navigation = useNavigation<any>();
+  const { todos } = useTodosContext();
   const [toastVisible, setToastVisible] = useState(false);
+
+  const { totalCount, doneCount, streak } = useMemo(() => ({
+    totalCount: todos.length,
+    doneCount: todos.filter(t => t.done).length,
+    streak: calcStreak(todos),
+  }), [todos]);
 
   const handleItemPress = (action: SettingItem['action']) => {
     if (action === 'report') {
@@ -62,17 +84,17 @@ export default function ProfileScreen() {
         {/* 통계 요약 행 */}
         <View style={styles.statsCard}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>49</Text>
+            <Text style={styles.statValue}>{totalCount}</Text>
             <Text style={styles.statLabel}>총 할 일</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>18</Text>
+            <Text style={styles.statValue}>{doneCount}</Text>
             <Text style={styles.statLabel}>완료</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>12일</Text>
+            <Text style={styles.statValue}>{streak > 0 ? `${streak}일` : '-'}</Text>
             <Text style={styles.statLabel}>연속 달성</Text>
           </View>
         </View>

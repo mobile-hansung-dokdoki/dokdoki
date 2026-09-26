@@ -19,8 +19,6 @@ import { Spacing } from '../theme/spacing';
 import { CategoryColors } from '../theme/colors';
 import { RootStackParamList } from '../navigation/RootNavigator';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CELL_WIDTH = (SCREEN_WIDTH - Spacing.screenHorizontal * 2) / 7;
 const CELL_HEIGHT = 44;
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -97,6 +95,14 @@ export default function CalendarScreen() {
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
+  // 행 단위 렌더링 (7열 고정) — flexWrap의 소수점 너비 오차 방지
+  const rows: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    const row = cells.slice(i, i + 7);
+    while (row.length < 7) row.push(null);
+    rows.push(row);
+  }
+
   // 날짜별 할 일 계산 (실제 todos 사용)
   const getTodosForDate = (dateStr: string): Todo[] =>
     todos.filter(t => t.date === dateStr);
@@ -154,45 +160,45 @@ export default function CalendarScreen() {
           ))}
         </View>
 
-        {/* 달력 그리드 */}
+        {/* 달력 그리드 — 행 단위 렌더링 */}
         <View style={styles.grid}>
-          {cells.map((day, idx) => {
-            if (day === null) {
-              return <View key={`empty-${idx}`} style={styles.cell} />;
-            }
-            const dateStr = padDate(currentYear, currentMonth, day);
-            const isSelected = dateStr === selectedDate;
-            const isToday = dateStr === today;
-            const hasTodos = getTodosForDate(dateStr).length > 0;
-            const colIndex = idx % 7;
-
-            return (
-              <TouchableOpacity
-                key={dateStr}
-                style={styles.cell}
-                onPress={() => setSelectedDate(dateStr)}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.dayCircle,
-                  isSelected && styles.dayCircleSelected,
-                  !isSelected && isToday && styles.dayCircleToday,
-                ]}>
-                  <Text style={[
-                    styles.dayNum,
-                    isSelected && styles.dayNumSelected,
-                    !isSelected && colIndex === 0 && styles.dayNumSun,
-                    !isSelected && colIndex === 6 && styles.dayNumSat,
-                  ]}>
-                    {day}
-                  </Text>
-                </View>
-                {hasTodos && !isSelected && (
-                  <View style={styles.dot} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
+          {rows.map((row, rowIdx) => (
+            <View key={rowIdx} style={styles.calRow}>
+              {row.map((day, colIdx) => {
+                if (day === null) {
+                  return <View key={`e-${rowIdx}-${colIdx}`} style={styles.cell} />;
+                }
+                const dateStr = padDate(currentYear, currentMonth, day);
+                const isSelected = dateStr === selectedDate;
+                const isToday = dateStr === today;
+                const hasTodos = getTodosForDate(dateStr).length > 0;
+                return (
+                  <TouchableOpacity
+                    key={dateStr}
+                    style={styles.cell}
+                    onPress={() => setSelectedDate(dateStr)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[
+                      styles.dayCircle,
+                      isSelected && styles.dayCircleSelected,
+                      !isSelected && isToday && styles.dayCircleToday,
+                    ]}>
+                      <Text style={[
+                        styles.dayNum,
+                        isSelected && styles.dayNumSelected,
+                        !isSelected && colIdx === 0 && styles.dayNumSun,
+                        !isSelected && colIdx === 6 && styles.dayNumSat,
+                      ]}>
+                        {day}
+                      </Text>
+                    </View>
+                    {hasTodos && !isSelected && <View style={styles.dot} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
         </View>
 
         {/* 선택된 날짜 섹션 */}
@@ -280,17 +286,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenHorizontal,
     marginBottom: 4,
   },
-  dayCell: { width: CELL_WIDTH, alignItems: 'center' },
+  dayCell: { flex: 1, alignItems: 'center' },
   dayLabel: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
   dayLabelSun: { color: Colors.red },
   dayLabelSat: { color: Colors.blue },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: Spacing.screenHorizontal,
-  },
+  grid: { paddingHorizontal: Spacing.screenHorizontal },
+  calRow: { flexDirection: 'row' },
   cell: {
-    width: CELL_WIDTH,
+    flex: 1,
     height: CELL_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',

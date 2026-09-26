@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, SafeAreaView,
   StyleSheet, LayoutAnimation, Platform, UIManager,
@@ -55,6 +55,40 @@ export default function HomeScreen() {
 
   const getCategoryCount = (cat: Category) =>
     todayTodos.filter(t => t.category === cat).length;
+
+  // 주간 통계 계산
+  const { achievementRate, completedCount, totalCount, streak, weekDone, weekTotal } = useMemo(() => {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const diff = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - diff);
+    const weekStart = mon.toISOString().split('T')[0];
+
+    const weekTodos = todos.filter(t => t.date && t.date >= weekStart && t.date <= today);
+    const wDone = weekTodos.filter(t => t.done).length;
+    const wTotal = weekTodos.length;
+    const rate = wTotal > 0 ? Math.round(wDone / wTotal * 100) : 0;
+
+    const doneDates = new Set(todos.filter(t => t.done && t.date).map(t => t.date!));
+    let s = 0;
+    const d = new Date(now);
+    for (let i = 0; i < 365; i++) {
+      const str = d.toISOString().split('T')[0];
+      if (doneDates.has(str)) { s++; d.setDate(d.getDate() - 1); }
+      else if (i === 0) { d.setDate(d.getDate() - 1); }
+      else break;
+    }
+
+    return {
+      achievementRate: rate,
+      completedCount: todos.filter(t => t.done).length,
+      totalCount: todos.length,
+      streak: s,
+      weekDone: wDone,
+      weekTotal: wTotal,
+    };
+  }, [todos]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -159,17 +193,17 @@ export default function HomeScreen() {
           {/* 도넛 + 범례 */}
           <View style={styles.analyticsContent}>
             <View style={styles.donutCircle}>
-              <Text style={styles.donutPercent}>72%</Text>
+              <Text style={styles.donutPercent}>{achievementRate}%</Text>
               <Text style={styles.donutCaption}>달성률</Text>
             </View>
             <View style={styles.legendWrap}>
               <View style={styles.legendRow}>
                 <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
-                <Text style={styles.legendText}>완료 건수 18건</Text>
+                <Text style={styles.legendText}>완료 건수 {completedCount}건</Text>
               </View>
               <View style={styles.legendRow}>
                 <View style={[styles.legendDot, { backgroundColor: Colors.textTertiary }]} />
-                <Text style={styles.legendText}>전체 건수 25건</Text>
+                <Text style={styles.legendText}>전체 건수 {totalCount}건</Text>
               </View>
             </View>
           </View>
@@ -178,13 +212,13 @@ export default function HomeScreen() {
           <View style={styles.analyticsStatsRow}>
             <View style={styles.analyticsStatItem}>
               <Text style={styles.analyticsStatLabel}>연속 달성</Text>
-              <Text style={styles.analyticsStatValue}>12일 연속</Text>
-              <Text style={styles.analyticsStatSub}>지금도 꾸준히 하고 있어요!</Text>
+              <Text style={styles.analyticsStatValue}>{streak > 0 ? `${streak}일 연속` : '-'}</Text>
+              <Text style={styles.analyticsStatSub}>{streak > 0 ? '지금도 꾸준히 하고 있어요!' : '오늘 할 일을 완료해보세요!'}</Text>
             </View>
             <View style={styles.analyticsStatItem}>
               <Text style={styles.analyticsStatLabel}>이번 주 목표</Text>
-              <Text style={styles.analyticsStatValue}>18/25개</Text>
-              <Text style={styles.analyticsStatSub}>목표까지 7개 남았어요!</Text>
+              <Text style={styles.analyticsStatValue}>{weekDone}/{weekTotal > 0 ? weekTotal : '-'}개</Text>
+              <Text style={styles.analyticsStatSub}>{weekTotal > weekDone ? `목표까지 ${weekTotal - weekDone}개 남았어요!` : weekTotal > 0 ? '이번 주 목표 달성! 🎉' : '이번 주 할 일을 추가해보세요!'}</Text>
             </View>
           </View>
         </View>
