@@ -1,11 +1,4 @@
-import { Tag } from '../types';
-
-export const DEFAULT_TAGS: Tag[] = [
-  { id: 'work',     label: '업무', color: '#1D4ED8', bgColor: '#DBEAFE' },
-  { id: 'personal', label: '개인', color: '#7C3AED', bgColor: '#EDE9FE' },
-  { id: 'urgent',   label: '긴급', color: '#DC2626', bgColor: '#FEE2E2' },
-];
-
+// 구 태그 상수 — MP2 이후 재사용 예정
 export const COLOR_PALETTE = [
   { color: '#1D4ED8', bgColor: '#DBEAFE' },
   { color: '#7C3AED', bgColor: '#EDE9FE' },

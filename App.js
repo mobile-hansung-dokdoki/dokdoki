@@ -1,11 +1,14 @@
+import 'react-native-gesture-handler';
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import TodoListScreen from './screens/TodoListScreen';
+import RootNavigator from './navigation/RootNavigator';
+import { TodosProvider } from './navigation/TodosContext';
 
 export default function App() {
   return (
-    <>
-      <TodoListScreen />
+    <TodosProvider>
+      <RootNavigator />
       <StatusBar style="dark" />
-    </>
+    </TodosProvider>
   );
 }
