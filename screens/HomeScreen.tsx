@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  View, Text, ScrollView, TouchableOpacity, SafeAreaView,
+  View, Text, ScrollView, TouchableOpacity,
   StyleSheet, LayoutAnimation, Platform, UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
