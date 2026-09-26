@@ -163,22 +163,6 @@ export default function HomeScreen() {
           })}
         </ScrollView>
 
-        {/* OCR 배너 */}
-        <View style={styles.ocrBanner}>
-          <View style={styles.ocrLabelBadge}>
-            <Text style={styles.ocrLabelText}>👁 AI SMART OCR</Text>
-          </View>
-          <View style={styles.ocrRow}>
-            <View style={styles.ocrTextWrap}>
-              <Text style={styles.ocrTitle}>AI 메모 스캔</Text>
-              <Text style={styles.ocrSub}>손글씨·이미지 속 할 일을 변환해 만들어 보세요.</Text>
-            </View>
-            <TouchableOpacity style={styles.ocrBtn} activeOpacity={0.8} onPress={() => navigation.navigate('OcrIntro')}>
-              <Text style={styles.ocrBtnText}>📷 스캔하기</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* 주간 분석 카드 */}
         <View style={styles.analyticsCard}>
           {/* 카드 헤더 */}
@@ -356,35 +340,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchPlaceholder: { flex: 1, fontSize: 14, color: Colors.textTertiary },
-  // OCR 배너
-  ocrBanner: {
-    marginHorizontal: Spacing.screenHorizontal,
-    backgroundColor: Colors.primary,
-    borderRadius: Spacing.cardRadius,
-    padding: 16,
-    marginBottom: 16,
-  },
-  ocrLabelBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.blue,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginBottom: 10,
-  },
-  ocrLabelText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
-  ocrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  ocrTextWrap: { flex: 1, gap: 4 },
-  ocrTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  ocrSub: { fontSize: 12, color: '#9DB4CB' },
-  ocrBtn: {
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  ocrBtnText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
   // 주간 분석 카드
   analyticsCard: {
     marginHorizontal: Spacing.screenHorizontal,
