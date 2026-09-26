@@ -89,6 +89,13 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* 검색바 */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={18} color={Colors.textTertiary} />
+          <Text style={styles.searchPlaceholder}>할 일, 메모, 태그 검색</Text>
+          <Ionicons name="mic-outline" size={18} color={Colors.textTertiary} />
+        </View>
+
         {/* 카테고리 필터 */}
         <ScrollView
           horizontal
@@ -121,6 +128,66 @@ export default function HomeScreen() {
             );
           })}
         </ScrollView>
+
+        {/* OCR 배너 */}
+        <View style={styles.ocrBanner}>
+          <View style={styles.ocrLabelBadge}>
+            <Text style={styles.ocrLabelText}>👁 AI SMART OCR</Text>
+          </View>
+          <View style={styles.ocrRow}>
+            <View style={styles.ocrTextWrap}>
+              <Text style={styles.ocrTitle}>AI 메모 스캔</Text>
+              <Text style={styles.ocrSub}>손글씨·이미지 속 할 일을 변환해 만들어 보세요.</Text>
+            </View>
+            <TouchableOpacity style={styles.ocrBtn} activeOpacity={0.8}>
+              <Text style={styles.ocrBtnText}>📷 스캔하기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 주간 분석 카드 */}
+        <View style={styles.analyticsCard}>
+          {/* 카드 헤더 */}
+          <View style={styles.analyticsHeader}>
+            <Text style={styles.analyticsTitle}>WEEKLY ANALYTICS</Text>
+            <View style={styles.analyticsTopBadge}>
+              <Text style={styles.analyticsTopBadgeText}>상위 5% 🏆</Text>
+            </View>
+          </View>
+          <Text style={styles.analyticsSubtitle}>나의 생산성 리포트</Text>
+
+          {/* 도넛 + 범례 */}
+          <View style={styles.analyticsContent}>
+            <View style={styles.donutCircle}>
+              <Text style={styles.donutPercent}>72%</Text>
+              <Text style={styles.donutCaption}>달성률</Text>
+            </View>
+            <View style={styles.legendWrap}>
+              <View style={styles.legendRow}>
+                <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
+                <Text style={styles.legendText}>완료 건수 18건</Text>
+              </View>
+              <View style={styles.legendRow}>
+                <View style={[styles.legendDot, { backgroundColor: Colors.textTertiary }]} />
+                <Text style={styles.legendText}>전체 건수 25건</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 하단 2칸 통계 */}
+          <View style={styles.analyticsStatsRow}>
+            <View style={styles.analyticsStatItem}>
+              <Text style={styles.analyticsStatLabel}>연속 달성</Text>
+              <Text style={styles.analyticsStatValue}>12일 연속</Text>
+              <Text style={styles.analyticsStatSub}>지금도 꾸준히 하고 있어요!</Text>
+            </View>
+            <View style={styles.analyticsStatItem}>
+              <Text style={styles.analyticsStatLabel}>이번 주 목표</Text>
+              <Text style={styles.analyticsStatValue}>18/25개</Text>
+              <Text style={styles.analyticsStatSub}>목표까지 7개 남았어요!</Text>
+            </View>
+          </View>
+        </View>
 
         {/* 오늘의 할 일 */}
         <View style={styles.sectionHeader}>
@@ -240,4 +307,102 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  // SearchBar
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Spacing.inputRadius,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginHorizontal: Spacing.screenHorizontal,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  searchPlaceholder: { flex: 1, fontSize: 14, color: Colors.textTertiary },
+  // OCR 배너
+  ocrBanner: {
+    marginHorizontal: Spacing.screenHorizontal,
+    backgroundColor: Colors.primary,
+    borderRadius: Spacing.cardRadius,
+    padding: 16,
+    marginBottom: 16,
+  },
+  ocrLabelBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.blue,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 10,
+  },
+  ocrLabelText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
+  ocrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  ocrTextWrap: { flex: 1, gap: 4 },
+  ocrTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  ocrSub: { fontSize: 12, color: '#9DB4CB' },
+  ocrBtn: {
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  ocrBtnText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
+  // 주간 분석 카드
+  analyticsCard: {
+    marginHorizontal: Spacing.screenHorizontal,
+    backgroundColor: Colors.surface,
+    borderRadius: Spacing.cardRadius,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+    marginBottom: 20,
+  },
+  analyticsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  analyticsTitle: { fontSize: 12, fontWeight: '700', color: Colors.primary, letterSpacing: 0.5 },
+  analyticsTopBadge: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  analyticsTopBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.amber },
+  analyticsSubtitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 16 },
+  analyticsContent: { flexDirection: 'row', alignItems: 'center', gap: 24, marginBottom: 16 },
+  donutCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 8,
+    borderColor: Colors.blue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  donutPercent: { fontSize: 16, fontWeight: '700', color: Colors.primary },
+  donutCaption: { fontSize: 10, color: Colors.textSecondary },
+  legendWrap: { gap: 10 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 13, color: Colors.textSecondary },
+  analyticsStatsRow: { flexDirection: 'row', gap: 12 },
+  analyticsStatItem: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 12,
+    gap: 3,
+  },
+  analyticsStatLabel: { fontSize: 11, color: Colors.textTertiary },
+  analyticsStatValue: { fontSize: 14, fontWeight: '700', color: Colors.primary },
+  analyticsStatSub: { fontSize: 11, color: Colors.textSecondary },
 });

@@ -8,12 +8,15 @@ import { Todo } from '../types';
 import { Colors } from '../theme/colors';
 import HomeScreen from '../screens/HomeScreen';
 import TodoFormScreen from '../screens/TodoFormScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
+import CalendarScreen from '../screens/CalendarScreen';
+import ReportScreen from '../screens/ReportScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 export type RootStackParamList = {
   Tabs: undefined;
   TodoForm: { todo?: Todo };
   Home: undefined;
+  Report: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -28,9 +31,9 @@ function TabNavigator() {
       tabBar={(props) => <CustomTabBar {...props} onFabPress={() => navigation.navigate('TodoForm', {})} />}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Calendar" children={() => <PlaceholderScreen title="캘린더" />} />
-      <Tab.Screen name="Report" children={() => <PlaceholderScreen title="리포트" />} />
-      <Tab.Screen name="Profile" children={() => <PlaceholderScreen title="내 정보" />} />
+      <Tab.Screen name="Calendar" component={CalendarScreen} />
+      <Tab.Screen name="Report" component={ReportScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
