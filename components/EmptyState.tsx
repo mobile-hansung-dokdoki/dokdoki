@@ -1,14 +1,27 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../constants/colors';
+import { Colors } from '../theme/colors';
 
-export default function EmptyState() {
+interface Props {
+  icon?: keyof typeof Ionicons.glyphMap;
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
+
+export default function EmptyState({ icon = 'checkbox-outline', title, description, actionLabel, onAction }: Props) {
   return (
     <View style={styles.container}>
-      <Ionicons name="clipboard-outline" size={60} color={Colors.border} />
-      <Text style={styles.title}>첫 할 일을 추가해보세요</Text>
-      <Text style={styles.subtitle}>메모 스캔 + 버튼으로 시작하세요</Text>
+      <Ionicons name={icon} size={56} color={Colors.border} />
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.desc}>{description}</Text>
+      {actionLabel && onAction && (
+        <TouchableOpacity style={styles.btn} onPress={onAction} activeOpacity={0.8}>
+          <Text style={styles.btnText}>+ {actionLabel}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -18,17 +31,32 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 80,
+    paddingHorizontal: 32,
+    gap: 8,
+    paddingBottom: 60,
   },
   title: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: Colors.textPrimary,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: 8,
   },
-  subtitle: {
+  desc: {
     fontSize: 14,
     color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  btn: {
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: Colors.primary,
+    borderRadius: 999,
+  },
+  btnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

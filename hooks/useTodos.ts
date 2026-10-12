@@ -1,141 +1,85 @@
 import { useState, useCallback } from 'react';
-import { Todo, Filter, SortOrder, TagId, Tag } from '../types';
-import { formatDateKorean, fromDateString } from '../utils/date';
-import { DEFAULT_TAGS } from '../constants/tags';
+import { Todo, Category } from '../types';
 
-const generateId = (): string =>
+const generateId = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 9)}`;
+
+const getTodoStatus = (todo: Todo): '완료' | '진행' | '대기' => {
+  if (todo.done) return '완료';
+  if (todo.time) return '진행';
+  return '대기';
+};
 
 export function useTodos() {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [filter, setFilter] = useState<Filter>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('createdDesc');
-  const [activeTags, setActiveTags] = useState<TagId[]>([]);
-  const [userTags, setUserTags] = useState<Tag[]>(DEFAULT_TAGS);
 
-  const addTodo = useCallback((text: string, dueDate?: string, tags?: TagId[]) => {
-    const trimmed = text.trim();
+  const addTodo = useCallback((params: {
+    title: string;
+    category: Category;
+    date?: string;
+    time?: string;
+    memo?: string;
+  }) => {
+    const trimmed = params.title.trim();
     if (!trimmed) return;
-    const now = Date.now();
-    setTodos(prev => [
-      { id: generateId(), text: trimmed, done: false, dueDate, tags, createdAt: now, updatedAt: now },
-      ...prev,
-    ]);
+    const now = new Date().toISOString();
+    const newTodo: Todo = {
+      id: generateId(),
+      title: trimmed,
+      category: params.category,
+      date: params.date,
+      time: params.time,
+      memo: params.memo,
+      done: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setTodos(prev => [newTodo, ...prev]);
+  }, []);
+
+  const editTodo = useCallback((id: string, params: {
+    title: string;
+    category: Category;
+    date?: string;
+    time?: string;
+    memo?: string;
+  }) => {
+    const trimmed = params.title.trim();
+    if (!trimmed) return;
+    setTodos(prev => prev.map(t =>
+      t.id === id
+        ? { ...t, ...params, title: trimmed, updatedAt: new Date().toISOString() }
+        : t
+    ));
   }, []);
 
   const toggleTodo = useCallback((id: string) => {
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === id
-          ? { ...todo, done: !todo.done, updatedAt: Date.now() }
-          : todo
-      )
-    );
-  }, []);
-
-  const editTodo = useCallback((id: string, text: string, dueDate?: string, tags?: TagId[]) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === id ? { ...todo, text: trimmed, dueDate, tags, updatedAt: Date.now() } : todo
-      )
-    );
+    setTodos(prev => prev.map(t =>
+      t.id === id
+        ? { ...t, done: !t.done, updatedAt: new Date().toISOString() }
+        : t
+    ));
   }, []);
 
   const deleteTodo = useCallback((id: string) => {
-    setTodos(prev => prev.filter(todo => todo.id !== id));
+    setTodos(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const addUserTag = useCallback((label: string, color: string, bgColor: string) => {
-    const id = generateId();
-    setUserTags(prev => [...prev, { id, label, color, bgColor }]);
-  }, []);
+  const todayTodos = todos.filter(t => {
+    const today = new Date().toISOString().split('T')[0];
+    return !t.date || t.date === today;
+  });
 
-  const deleteUserTag = useCallback((tagId: string) => {
-    setUserTags(prev => prev.filter(t => t.id !== tagId));
-    setActiveTags(prev => prev.filter(t => t !== tagId));
-  }, []);
-
-  const reorderUserTags = useCallback((from: number, to: number) => {
-    setUserTags(prev => {
-      const next = [...prev];
-      const [removed] = next.splice(from, 1);
-      next.splice(to, 0, removed);
-      return next;
-    });
-  }, []);
-
-  const toggleActiveTag = useCallback((tagId: TagId) => {
-    setActiveTags(prev =>
-      prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
-    );
-  }, []);
-
-  const tagMap: Record<string, Tag> = Object.fromEntries(userTags.map(t => [t.id, t]));
-
-  const filteredTodos = todos
-    .filter(todo => {
-      if (filter === 'active' && todo.done) return false;
-      if (filter === 'done' && !todo.done) return false;
-      if (activeTags.length > 0 && !activeTags.every(t => todo.tags?.includes(t))) return false;
-
-      const q = searchQuery.trim();
-      if (q) {
-        const lower = q.toLowerCase();
-        const textMatch = todo.text.toLowerCase().includes(lower);
-        const dateMatch = todo.dueDate
-          ? formatDateKorean(fromDateString(todo.dueDate)).includes(q)
-          : false;
-        return textMatch || dateMatch;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortOrder === 'createdDesc') {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-        return b.createdAt - a.createdAt;
-      }
-      if (sortOrder === 'createdAsc') {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-        return a.createdAt - b.createdAt;
-      }
-      // 마감날짜순: 날짜 그룹 안에서 완료 항목이 아래로
-      const aDate = a.dueDate ?? '';
-      const bDate = b.dueDate ?? '';
-      if (aDate !== bDate) {
-        if (!aDate) return 1;
-        if (!bDate) return -1;
-        return aDate.localeCompare(bDate);
-      }
-      if (a.done !== b.done) return a.done ? 1 : -1;
-      return b.createdAt - a.createdAt;
-    });
-
-  const doneCount = todos.filter(todo => todo.done).length;
+  const doneCount = todos.filter(t => t.done).length;
 
   return {
     todos,
-    filteredTodos,
+    todayTodos,
     doneCount,
-    filter,
-    setFilter,
-    searchQuery,
-    setSearchQuery,
-    sortOrder,
-    setSortOrder,
-    activeTags,
-    setActiveTags,
-    toggleActiveTag,
-    userTags,
-    tagMap,
-    addUserTag,
-    deleteUserTag,
-    reorderUserTags,
     addTodo,
-    toggleTodo,
     editTodo,
+    toggleTodo,
     deleteTodo,
+    getTodoStatus,
   };
 }
