@@ -6,16 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { useTodosContext } from '../navigation/TodosContext';
 import { Category, Todo } from '../types';
 import { Colors, CategoryColors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BAR_MAX_HEIGHT = 80;
 const CATEGORIES: Category[] = ['과제', '업무', '개인 루틴', '학습', '기타'];
 
@@ -38,7 +34,6 @@ function calcStreak(todos: Todo[]): number {
 }
 
 export default function ReportScreen() {
-  const navigation = useNavigation();
   const { todos } = useTodosContext();
   const [activeTab, setActiveTab] = useState<PeriodTab>('주간');
 
@@ -107,11 +102,7 @@ export default function ReportScreen() {
     <SafeAreaView style={styles.safe}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>나의 생산성 리포트</Text>
-        <View style={{ width: 22 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -141,28 +132,31 @@ export default function ReportScreen() {
 
         {/* 달성률 도넛 카드 */}
         <View style={styles.donutCard}>
-          <View style={styles.donutRow}>
-            <View style={styles.donutOuter}>
-              <View style={styles.donutInner}>
-                <Text style={styles.donutPercent}>{achievementRate}%</Text>
-                <Text style={styles.donutCaption}>
-                  {activeTab === '주간' ? '이번 주 달성률' : activeTab === '월간' ? '이번 달 달성률' : '전체 달성률'}
-                </Text>
-              </View>
+          <View style={styles.donutOuter}>
+            <View style={styles.donutInner}>
+              <Text style={styles.donutPercent}>{achievementRate}%</Text>
+              <Text style={styles.donutCaption}>
+                {activeTab === '주간' ? '이번 주 달성률' : activeTab === '월간' ? '이번 달 달성률' : '전체 달성률'}
+              </Text>
             </View>
-            <View style={styles.legendWrap}>
-              <View style={styles.legendRow}>
-                <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
-                <Text style={styles.legendText}>완료 건수 {completedCount}건</Text>
-              </View>
-              <View style={styles.legendRow}>
-                <View style={[styles.legendDot, { backgroundColor: Colors.blue }]} />
-                <Text style={styles.legendText}>진행 중 {inProgressCount}건</Text>
-              </View>
-              <View style={styles.legendRow}>
-                <View style={[styles.legendDot, { backgroundColor: Colors.border }]} />
-                <Text style={styles.legendText}>전체 {totalCount}건</Text>
-              </View>
+          </View>
+          <View style={styles.legendWrap}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
+              <Text style={styles.legendLabel}>완료</Text>
+              <Text style={styles.legendValue}>{completedCount}건</Text>
+            </View>
+            <View style={styles.legendDivider} />
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.blue }]} />
+              <Text style={styles.legendLabel}>진행 중</Text>
+              <Text style={styles.legendValue}>{inProgressCount}건</Text>
+            </View>
+            <View style={styles.legendDivider} />
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.border }]} />
+              <Text style={styles.legendLabel}>전체</Text>
+              <Text style={styles.legendValue}>{totalCount}건</Text>
             </View>
           </View>
         </View>
@@ -243,25 +237,22 @@ export default function ReportScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.screenHorizontal,
     paddingTop: 8,
     paddingBottom: 12,
   },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   tabRow: {
     flexDirection: 'row',
     marginHorizontal: Spacing.screenHorizontal,
     backgroundColor: Colors.surface,
-    borderRadius: Spacing.buttonRadius,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 4,
     marginBottom: 20,
   },
-  tabItem: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+  tabItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 999 },
   tabItemActive: { backgroundColor: Colors.primary },
   tabText: { fontSize: 14, fontWeight: '500', color: Colors.textSecondary },
   tabTextActive: { color: '#FFFFFF', fontWeight: '700' },
@@ -274,22 +265,32 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.cardRadius,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 20,
+    padding: 24,
     marginBottom: 16,
+    alignItems: 'center',
+    gap: 24,
   },
-  donutRow: { flexDirection: 'row', alignItems: 'center', gap: 24 },
   donutOuter: {
-    width: 120, height: 120, borderRadius: 60,
-    borderWidth: 12, borderColor: Colors.blue,
+    width: 140, height: 140, borderRadius: 70,
+    borderWidth: 14, borderColor: Colors.blue,
     alignItems: 'center', justifyContent: 'center',
   },
   donutInner: { alignItems: 'center', gap: 4 },
-  donutPercent: { fontSize: 28, fontWeight: '700', color: Colors.primary },
-  donutCaption: { fontSize: 11, color: Colors.textSecondary, textAlign: 'center' },
-  legendWrap: { gap: 8, flex: 1 },
-  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  donutPercent: { fontSize: 32, fontWeight: '700', color: Colors.primary },
+  donutCaption: { fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
+  legendWrap: {
+    flexDirection: 'row',
+    width: '100%',
+    backgroundColor: Colors.background,
+    borderRadius: Spacing.cardRadius,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+  },
+  legendItem: { flex: 1, alignItems: 'center', gap: 6 },
+  legendDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 4 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
-  legendText: { fontSize: 13, color: Colors.textSecondary },
+  legendLabel: { fontSize: 12, color: Colors.textSecondary },
+  legendValue: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   statsRow: {
     flexDirection: 'row',
     marginHorizontal: Spacing.screenHorizontal,
