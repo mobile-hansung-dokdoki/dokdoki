@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -53,7 +52,7 @@ type CalendarNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function CalendarScreen() {
   const navigation = useNavigation<CalendarNavProp>();
-  const { todos, toggleTodo, deleteTodo } = useTodosContext();
+  const { todos, toggleTodo } = useTodosContext();
 
   const today = todayString();
   const todayParts = today.split('-').map(Number);
@@ -108,18 +107,6 @@ export default function CalendarScreen() {
     todos.filter(t => t.date === dateStr);
 
   const selectedTodos = getTodosForDate(selectedDate);
-
-  const handleMorePress = (todo: Todo) => {
-    Alert.alert(todo.title, undefined, [
-      { text: '수정', onPress: () => navigation.navigate('TodoForm', { todo }) },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: () => deleteTodo(todo.id),
-      },
-      { text: '취소', style: 'cancel' },
-    ]);
-  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -241,12 +228,6 @@ export default function CalendarScreen() {
                       {item.title}
                     </Text>
                     <View style={[styles.catDot, { backgroundColor: catColor.color }]} />
-                    <TouchableOpacity
-                      onPress={() => handleMorePress(item)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons name="ellipsis-vertical" size={16} color={Colors.textTertiary} />
-                    </TouchableOpacity>
                   </TouchableOpacity>
                 );
               })}
@@ -304,6 +285,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: Colors.background,
   },
   dayCircleSelected: { backgroundColor: Colors.primary },
   dayCircleToday: { borderWidth: 2, borderColor: Colors.blue },
