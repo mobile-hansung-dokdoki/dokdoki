@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +18,7 @@ import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { CategoryColors } from '../theme/colors';
 import { RootStackParamList } from '../navigation/RootNavigator';
+import { relativeDayLabel, subscribeLocalDate, todayString } from '../utils/date';
 
 const CELL_HEIGHT = 44;
 
@@ -26,11 +28,6 @@ function padDate(y: number, m: number, d: number): string {
   const mm = String(m).padStart(2, '0');
   const dd = String(d).padStart(2, '0');
   return `${y}-${mm}-${dd}`;
-}
-
-function todayString(): string {
-  const now = new Date();
-  return padDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
 function getDaysInMonth(year: number, month: number): number {
@@ -54,11 +51,18 @@ export default function CalendarScreen() {
   const navigation = useNavigation<CalendarNavProp>();
   const { todos, toggleTodo } = useTodosContext();
 
-  const today = todayString();
+  const [today, setToday] = useState(todayString);
   const todayParts = today.split('-').map(Number);
   const [currentYear, setCurrentYear] = useState(todayParts[0]);
   const [currentMonth, setCurrentMonth] = useState(todayParts[1]);
   const [selectedDate, setSelectedDate] = useState(today);
+
+  useEffect(() => subscribeLocalDate(setToday, refresh => {
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') refresh();
+    });
+    return () => subscription.remove();
+  }), []);
 
   const handlePrevMonth = () => {
     if (currentMonth === 1) {
@@ -80,6 +84,7 @@ export default function CalendarScreen() {
 
   const handleTodayPress = () => {
     const t = todayString();
+    setToday(t);
     const [y, m] = t.split('-').map(Number);
     setCurrentYear(y);
     setCurrentMonth(m);
@@ -116,7 +121,7 @@ export default function CalendarScreen() {
           <Text style={styles.headerTitle}>캘린더</Text>
         </View>
         <TouchableOpacity style={styles.headerRight} onPress={handleTodayPress}>
-          <Text style={styles.todayBtn}>오늘</Text>
+          <Text style={styles.todayBtn}>{relativeDayLabel(selectedDate, today)}</Text>
         </TouchableOpacity>
       </View>
 
@@ -168,14 +173,15 @@ export default function CalendarScreen() {
                   >
                     <View style={[
                       styles.dayCircle,
-                      isSelected && styles.dayCircleSelected,
-                      !isSelected && isToday && styles.dayCircleToday,
+                      isSelected && !isToday && styles.dayCircleSelected,
+                      isToday && styles.dayCircleToday,
                     ]}>
                       <Text style={[
                         styles.dayNum,
-                        isSelected && styles.dayNumSelected,
+                        isSelected && !isToday && styles.dayNumSelected,
                         !isSelected && colIdx === 0 && styles.dayNumSun,
                         !isSelected && colIdx === 6 && styles.dayNumSat,
+                        isToday && styles.dayNumToday,
                       ]}>
                         {day}
                       </Text>
@@ -287,11 +293,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     backgroundColor: Colors.background,
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   dayCircleSelected: { backgroundColor: Colors.primary },
   dayCircleToday: { borderWidth: 2, borderColor: Colors.blue },
   dayNum: { fontSize: 14, color: Colors.textPrimary },
   dayNumSelected: { color: '#FFFFFF', fontWeight: '700' },
+  dayNumToday: { color: Colors.blue, fontWeight: '700' },
   dayNumSun: { color: Colors.red },
   dayNumSat: { color: Colors.blue },
   dot: {

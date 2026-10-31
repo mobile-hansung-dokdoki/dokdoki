@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { Todo, Category } from '../types';
-
-const generateId = () =>
-  `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 9)}`;
+import { Todo, TodoInput } from '../types';
+import { buildTodos, replaceSchedule } from '../utils/schedule';
+import { todayString } from '../utils/date';
+import { DEFAULT_CATEGORIES, appendCategory, removeCategory } from '../utils/category';
 
 const getTodoStatus = (todo: Todo): '완료' | '진행' | '대기' => {
   if (todo.done) return '완료';
@@ -12,45 +12,36 @@ const getTodoStatus = (todo: Todo): '완료' | '진행' | '대기' => {
 
 export function useTodos() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
 
-  const addTodo = useCallback((params: {
-    title: string;
-    category: Category;
-    date?: string;
-    time?: string;
-    memo?: string;
-  }) => {
-    const trimmed = params.title.trim();
-    if (!trimmed) return;
-    const now = new Date().toISOString();
-    const newTodo: Todo = {
-      id: generateId(),
-      title: trimmed,
-      category: params.category,
-      date: params.date,
-      time: params.time,
-      memo: params.memo,
-      done: false,
-      createdAt: now,
-      updatedAt: now,
-    };
-    setTodos(prev => [newTodo, ...prev]);
+  const addCategory = useCallback((name: string) => {
+    const next = appendCategory(categories, name);
+    setCategories(next);
+    return name.trim();
+  }, [categories]);
+
+  const deleteCategory = useCallback((name: string) => {
+    const next = removeCategory(categories, todos, name);
+    setCategories(next.categories);
+    setTodos(next.todos);
+  }, [categories, todos]);
+
+  const addTodo = useCallback((params: TodoInput) => {
+    if (!params.title.trim()) return;
+    const entries = buildTodos(params);
+    setTodos(prev => [...entries, ...prev]);
   }, []);
 
-  const editTodo = useCallback((id: string, params: {
-    title: string;
-    category: Category;
-    date?: string;
-    time?: string;
-    memo?: string;
-  }) => {
-    const trimmed = params.title.trim();
-    if (!trimmed) return;
-    setTodos(prev => prev.map(t =>
-      t.id === id
-        ? { ...t, ...params, title: trimmed, updatedAt: new Date().toISOString() }
-        : t
-    ));
+  const editTodo = useCallback((id: string, params: TodoInput) => {
+    if (!params.title.trim()) return;
+    setTodos(prev => replaceSchedule(prev, id, params));
+  }, []);
+
+  const deleteSchedule = useCallback((id: string) => {
+    setTodos(prev => {
+      const target = prev.find(t => t.id === id);
+      return prev.filter(t => target?.scheduleId ? t.scheduleId !== target.scheduleId : t.id !== id);
+    });
   }, []);
 
   const toggleTodo = useCallback((id: string) => {
@@ -66,13 +57,16 @@ export function useTodos() {
   }, []);
 
   const todayTodos = todos.filter(t => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayString();
     return !t.date || t.date === today;
   });
 
   const doneCount = todos.filter(t => t.done).length;
 
   return {
+    categories,
+    addCategory,
+    deleteCategory,
     todos,
     todayTodos,
     doneCount,
@@ -80,6 +74,7 @@ export function useTodos() {
     editTodo,
     toggleTodo,
     deleteTodo,
+    deleteSchedule,
     getTodoStatus,
   };
 }

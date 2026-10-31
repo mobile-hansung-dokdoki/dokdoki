@@ -5,10 +5,12 @@ import {
   StyleSheet, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTodosContext } from '../navigation/TodosContext';
-import { Category } from '../types';
+import { Category, TodoSchedule } from '../types';
+import ScheduleEditor from '../components/ScheduleEditor';
+import { todayString } from '../utils/date';
+import { expandSchedule, normalizeTime } from '../utils/schedule';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import CategoryChip from '../components/CategoryChip';
@@ -16,66 +18,63 @@ import PrimaryButton from '../components/PrimaryButton';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { RootStackParamList } from '../navigation/RootNavigator';
 
-const CATEGORIES: Category[] = ['과제', '업무', '개인 루틴', '학습', '기타'];
-
 type Props = NativeStackScreenProps<RootStackParamList, 'TodoForm'>;
 
 export default function TodoFormScreen({ route, navigation }: Props) {
   const { todo } = route.params ?? {};
   const isEdit = !!todo;
-  const { addTodo, editTodo, deleteTodo } = useTodosContext();
+  const { addTodo, editTodo, deleteSchedule, categories, addCategory, deleteCategory } = useTodosContext();
+
+  const [schedule, setSchedule] = useState<TodoSchedule>(todo?.schedule ?? {
+    mode: 'dates', slots: [{ date: todo?.date ?? todayString(), time: todo?.time ? normalizeTime(todo.time) : undefined }],
+  });
+  const [scheduleError, setScheduleError] = useState('');
 
   const [title, setTitle] = useState(todo?.title ?? '');
-  const [category, setCategory] = useState<Category>(todo?.category ?? '과제');
-  const [date, setDate] = useState<Date | null>(todo?.date ? new Date(todo.date) : new Date());
-  const [time, setTime] = useState<Date | null>(
-    todo?.time ? parseTime(todo.time) : null
-  );
+  const initialCategory = todo?.category ?? '과제';
+  const [category, setCategory] = useState<Category>(categories.includes(initialCategory) ? initialCategory : '기타');
   const [memo, setMemo] = useState(todo?.memo ?? '');
   const [titleError, setTitleError] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryError, setCategoryError] = useState('');
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
-  function parseTime(str: string): Date {
-    const d = new Date();
-    const match = str.match(/(\d+):(\d+)/);
-    if (match) {
-      let h = parseInt(match[1]);
-      const m = parseInt(match[2]);
-      if (str.includes('오후') && h < 12) h += 12;
-      d.setHours(h, m, 0, 0);
+  const confirmCategoryDelete = () => {
+    if (categoryToDelete === null) return;
+    deleteCategory(categoryToDelete);
+    if (category === categoryToDelete) setCategory('기타');
+    setCategoryToDelete(null);
+  };
+
+  const closeCategoryInput = () => {
+    setAddingCategory(false);
+    setCategoryName('');
+    setCategoryError('');
+  };
+
+  const handleAddCategory = () => {
+    try {
+      setCategory(addCategory(categoryName));
+      closeCategoryInput();
+    } catch (error) {
+      setCategoryError((error as Error).message);
     }
-    return d;
-  }
-
-  function formatDate(d: Date) {
-    const year = d.getFullYear();
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
-    const days = ['일', '월', '화', '수', '목', '금', '토'];
-    return `${year}년 ${month}월 ${day}일 (${days[d.getDay()]})`;
-  }
-
-  function formatTime(d: Date) {
-    const h = d.getHours();
-    const m = d.getMinutes();
-    const ampm = h < 12 ? '오전' : '오후';
-    const hh = h % 12 === 0 ? 12 : h % 12;
-    return `${ampm} ${hh}:${String(m).padStart(2, '0')}`;
-  }
+  };
 
   const handleSave = () => {
     if (!title.trim()) {
       setTitleError(true);
       return;
     }
+    try { expandSchedule(schedule); }
+    catch (error) { setScheduleError((error as Error).message); return; }
     const params = {
       title,
       category,
-      date: date ? date.toISOString().split('T')[0] : undefined,
-      time: time ? formatTime(time) : undefined,
       memo: memo.trim() || undefined,
+      schedule,
     };
     if (isEdit && todo) {
       editTodo(todo.id, params);
@@ -90,7 +89,7 @@ export default function TodoFormScreen({ route, navigation }: Props) {
   };
 
   const confirmDelete = () => {
-    if (todo) deleteTodo(todo.id);
+    if (todo) deleteSchedule(todo.id);
     setConfirmVisible(false);
     navigation.goBack();
   };
@@ -157,61 +156,57 @@ export default function TodoFormScreen({ route, navigation }: Props) {
             )}
           </View>
 
-          {/* 날짜 */}
-          <View style={styles.field}>
-            <Text style={styles.label}>날짜</Text>
-            <TouchableOpacity style={styles.selectField} onPress={() => setShowDatePicker(true)}>
-              <Ionicons name="calendar-outline" size={16} color={Colors.textSecondary} />
-              <Text style={styles.selectText}>{date ? formatDate(date) : '날짜를 선택하세요'}</Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-            </TouchableOpacity>
-          </View>
-          {showDatePicker && (
-            <DateTimePicker
-              value={date ?? new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(_, d) => { setShowDatePicker(false); if (d) setDate(d); }}
-            />
-          )}
+          <ScheduleEditor value={schedule} onChange={next => { setSchedule(next); setScheduleError(''); }} />
+          {!!scheduleError && <Text accessibilityRole="alert" style={styles.errorText}>{scheduleError}</Text>}
+          {todo?.scheduleId && <Text style={styles.counter}>저장하면 묶인 일정 전체에 변경사항이 적용돼요.</Text>}
 
-          {/* 시간 */}
-          <View style={styles.field}>
-            <Text style={styles.label}>시간</Text>
-            <TouchableOpacity style={styles.selectField} onPress={() => setShowTimePicker(true)}>
-              <Ionicons name="time-outline" size={16} color={Colors.textSecondary} />
-              <Text style={[styles.selectText, !time && styles.placeholder]}>
-                {time ? formatTime(time) : '시간을 선택하세요 (선택)'}
-              </Text>
-              {time && (
-                <TouchableOpacity onPress={() => setTime(null)}>
-                  <Ionicons name="close-circle" size={18} color={Colors.textTertiary} />
-                </TouchableOpacity>
-              )}
-            </TouchableOpacity>
-          </View>
-          {showTimePicker && (
-            <DateTimePicker
-              value={time ?? new Date()}
-              mode="time"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(_, d) => { setShowTimePicker(false); if (d) setTime(d); }}
-            />
-          )}
-
-          {/* 카테고리 */}
           <View style={styles.field}>
             <Text style={styles.label}>카테고리</Text>
             <View style={styles.chipRow}>
-              {CATEGORIES.map(cat => (
+              {categories.map(cat => (
                 <CategoryChip
                   key={cat}
                   label={cat}
                   selected={category === cat}
                   onPress={() => setCategory(cat)}
+                  onLongPress={cat === '기타' ? undefined : () => setCategoryToDelete(cat)}
                 />
               ))}
+              <TouchableOpacity
+                style={styles.addCategoryChip}
+                accessibilityRole="button"
+                accessibilityLabel="카테고리 추가"
+                accessibilityState={{ expanded: addingCategory }}
+                onPress={() => setAddingCategory(true)}
+              >
+                <Ionicons name="add" size={20} color={Colors.primary} />
+              </TouchableOpacity>
             </View>
+            <Text style={styles.counter}>길게 눌러 삭제할 수 있어요. 기본 카테고리 ‘기타’는 유지돼요.</Text>
+            {addingCategory && (
+              <View style={styles.categoryEditor}>
+                <TextInput
+                  style={[styles.input, categoryError && styles.inputError]}
+                  accessibilityLabel="새 카테고리 이름"
+                  value={categoryName}
+                  onChangeText={value => { setCategoryName(value); setCategoryError(''); }}
+                  placeholder="새 카테고리 이름"
+                  placeholderTextColor={Colors.textTertiary}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleAddCategory}
+                />
+                {!!categoryError && <Text accessibilityRole="alert" style={styles.errorText}>{categoryError}</Text>}
+                <View style={styles.chipRow}>
+                  <TouchableOpacity style={styles.categoryAction} accessibilityRole="button" onPress={handleAddCategory}>
+                    <Text style={styles.categoryActionText}>추가</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.categoryAction} accessibilityRole="button" onPress={closeCategoryInput}>
+                    <Text style={styles.selectText}>취소</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </View>
 
           {/* 메모 */}
@@ -238,7 +233,7 @@ export default function TodoFormScreen({ route, navigation }: Props) {
           {isEdit && (
             <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} activeOpacity={0.8}>
               <Ionicons name="trash-outline" size={16} color={Colors.red} />
-              <Text style={styles.deleteBtnText}>할 일 삭제</Text>
+              <Text style={styles.deleteBtnText}>{todo?.scheduleId ? '묶인 일정 전체 삭제' : '할 일 삭제'}</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
@@ -246,8 +241,16 @@ export default function TodoFormScreen({ route, navigation }: Props) {
 
       <ConfirmDialog
         visible={confirmVisible}
+        description={todo?.scheduleId ? '묶인 일정이 모두 삭제돼요. 삭제한 일정은 복구할 수 없어요.' : undefined}
         onCancel={() => setConfirmVisible(false)}
         onConfirm={confirmDelete}
+      />
+      <ConfirmDialog
+        visible={categoryToDelete !== null}
+        title={`“${categoryToDelete ?? ''}”을 삭제하시겠습니까?`}
+        description="카테고리만 삭제하고, 기존 할 일은 ‘기타’로 옮겨요."
+        onCancel={() => setCategoryToDelete(null)}
+        onConfirm={confirmCategoryDelete}
       />
     </SafeAreaView>
   );
@@ -268,6 +271,9 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '600', color: Colors.textPrimary },
   scroll: { flex: 1 },
   content: {
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
     padding: Spacing.screenHorizontal,
     gap: 20,
     paddingBottom: 40,
@@ -315,6 +321,15 @@ const styles = StyleSheet.create({
   selectText: { flex: 1, fontSize: 15, color: Colors.textPrimary },
   placeholder: { color: Colors.textTertiary },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  addCategoryChip: {
+    minWidth: 44, minHeight: 44,
+    alignItems: 'center', justifyContent: 'center',
+    borderRadius: Spacing.chipRadius,
+    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface,
+  },
+  categoryEditor: { gap: 8 },
+  categoryAction: { minHeight: 44, paddingHorizontal: 14, justifyContent: 'center' },
+  categoryActionText: { fontSize: 15, fontWeight: '600', color: Colors.primary },
   memoInput: { height: 120, paddingTop: 12 },
   counter: { fontSize: 12, color: Colors.textTertiary, textAlign: 'right' },
   deleteBtn: {

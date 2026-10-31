@@ -20,10 +20,8 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CategoryDetail'>;
 
-const CATEGORIES: Category[] = ['과제', '업무', '개인 루틴', '학습', '기타'];
-
 export default function CategoryDetailScreen({ route, navigation }: Props) {
-  const { todos, toggleTodo, deleteTodo, getTodoStatus } = useTodosContext();
+  const { todos, toggleTodo, deleteTodo, getTodoStatus, categories } = useTodosContext();
   const [selectedCategory, setSelectedCategory] = useState<Category>(route.params.category);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -59,9 +57,9 @@ export default function CategoryDetailScreen({ route, navigation }: Props) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryChipRow}
       >
-        {CATEGORIES.map(cat => {
+        {categories.map(cat => {
           const isActive = selectedCategory === cat;
-          const catColor = CategoryColors[cat];
+          const catColor = CategoryColors[cat] ?? CategoryColors['기타'];
           const count = getCategoryCount(cat);
           return (
             <TouchableOpacity

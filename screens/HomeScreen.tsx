@@ -8,9 +8,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTodosContext } from '../navigation/TodosContext';
+import { useProfile } from '../navigation/ProfileContext';
+import ProfileAvatar from '../components/ProfileAvatar';
+import SyncStatusBadge from '../components/SyncStatusBadge';
 import { Category, Todo } from '../types';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
+import AchievementRing from '../components/AchievementRing';
 import TodoListItem from '../components/TodoListItem';
 import EmptyState from '../components/EmptyState';
 import Toast from '../components/Toast';
@@ -20,15 +24,16 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const CATEGORIES: Category[] = ['과제', '업무', '개인 루틴', '학습', '기타'];
-
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
+  const { profile } = useProfile();
   const navigation = useNavigation<HomeNavProp>();
-  const { todos, todayTodos, doneCount, toggleTodo, deleteTodo, getTodoStatus } = useTodosContext();
+  const { todos, todayTodos, doneCount, toggleTodo, deleteTodo, getTodoStatus, categories } = useTodosContext();
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [toast, setToast] = useState(false);
+  // 실제 동기화 연결 전에는 완료 상태로 표시하지 않습니다.
+  const isSynced = false;
 
   const filtered = (activeCategory
     ? todayTodos.filter(t => t.category === activeCategory)
@@ -95,17 +100,20 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       {/* 상단 바 */}
       <View style={styles.topBar}>
-        <View style={styles.liveBadge}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveText}>똑똑이 인텔리전스 LIVE</Text>
-        </View>
+        <SyncStatusBadge synced={isSynced} />
         <View style={styles.topRight}>
           <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="notifications-outline" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>나</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.avatar}
+            accessibilityRole="button"
+            accessibilityLabel="내 정보로 이동"
+            onPress={() => navigation.navigate('Tabs', { screen: 'Profile' })}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <ProfileAvatar profile={profile} size={32} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -117,10 +125,7 @@ export default function HomeScreen() {
             <Text style={styles.monthCount}>
               이번 달 할 일 <Text style={styles.countNum}>{todos.length}</Text>
             </Text>
-            <View style={styles.syncBadge}>
-              <View style={[styles.syncDot, { backgroundColor: Colors.green }]} />
-              <Text style={styles.syncText}>동기화됨</Text>
-            </View>
+            <SyncStatusBadge synced={isSynced} />
           </View>
         </View>
 
@@ -146,7 +151,7 @@ export default function HomeScreen() {
               전체 {todayTodos.length}
             </Text>
           </TouchableOpacity>
-          {CATEGORIES.map(cat => {
+          {categories.map(cat => {
             const count = getCategoryCount(cat);
             if (count === 0) return null;
             const isActive = activeCategory === cat;
@@ -169,18 +174,15 @@ export default function HomeScreen() {
           {/* 카드 헤더 */}
           <View style={styles.analyticsHeader}>
             <Text style={styles.analyticsTitle}>WEEKLY ANALYTICS</Text>
-            <View style={styles.analyticsTopBadge}>
-              <Text style={styles.analyticsTopBadgeText}>상위 5% 🏆</Text>
-            </View>
           </View>
           <Text style={styles.analyticsSubtitle}>나의 생산성 리포트</Text>
 
           {/* 도넛 + 범례 */}
           <View style={styles.analyticsContent}>
-            <View style={styles.donutCircle}>
+            <AchievementRing percent={achievementRate} size={80} strokeWidth={8}>
               <Text style={styles.donutPercent}>{achievementRate}%</Text>
               <Text style={styles.donutCaption}>달성률</Text>
-            </View>
+            </AchievementRing>
             <View style={styles.legendWrap}>
               <View style={styles.legendRow}>
                 <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
@@ -257,24 +259,12 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.green },
-  liveText: { fontSize: 12, fontWeight: '600', color: '#FFFFFF' },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: Colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
   scroll: { flex: 1 },
   summary: {
     paddingHorizontal: Spacing.screenHorizontal,
@@ -286,9 +276,6 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   monthCount: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary },
   countNum: { fontSize: 28, fontWeight: '800', color: Colors.primary },
-  syncBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  syncDot: { width: 6, height: 6, borderRadius: 3 },
-  syncText: { fontSize: 12, color: Colors.textSecondary },
   filterRow: {
     paddingHorizontal: Spacing.screenHorizontal,
     paddingBottom: 12,
@@ -358,24 +345,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   analyticsTitle: { fontSize: 12, fontWeight: '700', color: Colors.primary, letterSpacing: 0.5 },
-  analyticsTopBadge: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  analyticsTopBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.amber },
   analyticsSubtitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 16 },
   analyticsContent: { flexDirection: 'row', alignItems: 'center', gap: 24, marginBottom: 16 },
-  donutCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 8,
-    borderColor: Colors.blue,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   donutPercent: { fontSize: 16, fontWeight: '700', color: Colors.primary },
   donutCaption: { fontSize: 10, color: Colors.textSecondary },
   legendWrap: { gap: 10 },

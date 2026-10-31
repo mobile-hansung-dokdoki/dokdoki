@@ -8,13 +8,19 @@ interface Props {
   label: Category;
   selected: boolean;
   onPress: () => void;
+  onLongPress?: () => void;
 }
 
-export default function CategoryChip({ label, selected, onPress }: Props) {
+export default function CategoryChip({ label, selected, onPress, onLongPress }: Props) {
   return (
     <TouchableOpacity
       style={[styles.chip, selected && styles.selected]}
       onPress={onPress}
+      onLongPress={onLongPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected }}
+      accessibilityHint={onLongPress ? '길게 누르면 카테고리를 삭제할 수 있어요.' : undefined}
       activeOpacity={0.7}
     >
       <Text style={[styles.text, selected && styles.selectedText]}>{label}</Text>
