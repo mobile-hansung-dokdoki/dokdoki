@@ -140,6 +140,7 @@ export default function HomeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
           contentContainerStyle={styles.filterRow}
         >
           {/* 전체 칩 */}
@@ -276,6 +277,7 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   monthCount: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary },
   countNum: { fontSize: 28, fontWeight: '800', color: Colors.primary },
+  filterScroll: { flexGrow: 0 },
   filterRow: {
     paddingHorizontal: Spacing.screenHorizontal,
     paddingBottom: 12,
