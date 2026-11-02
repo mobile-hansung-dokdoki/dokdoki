@@ -24,19 +24,17 @@ type CategoryMeta = {
   desc: string;
 };
 
-const CATEGORY_META: Record<Category, CategoryMeta> = {
+const CATEGORY_META: Record<Category, CategoryMeta> = Object.assign(Object.create(null), {
   '과제':      { icon: 'document-text-outline',               desc: '학교 과제 및 리포트' },
   '업무':      { icon: 'briefcase-outline',                   desc: '직장 업무 및 프로젝트' },
   '개인 루틴': { icon: 'person-outline',                      desc: '건강, 생활, 자기계발' },
   '학습':      { icon: 'school-outline',                      desc: '강의, 자격증, 공부' },
   '기타':      { icon: 'ellipsis-horizontal-circle-outline',  desc: '기타 할 일' },
-};
-
-const CATEGORIES: Category[] = ['과제', '업무', '개인 루틴', '학습', '기타'];
+});
 
 export default function CategoryListScreen() {
   const navigation = useNavigation<CategoryListNavProp>();
-  const { todos } = useTodosContext();
+  const { todos, categories } = useTodosContext();
   const [toastVisible, setToastVisible] = useState(false);
 
   return (
@@ -56,9 +54,9 @@ export default function CategoryListScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.listContainer}>
           {/* 카테고리 카드들 */}
-          {CATEGORIES.map(cat => {
-            const meta = CATEGORY_META[cat];
-            const catColor = CategoryColors[cat];
+          {categories.map(cat => {
+            const meta = CATEGORY_META[cat] ?? CATEGORY_META['기타'];
+            const catColor = CategoryColors[cat] ?? CategoryColors['기타'];
             const count = todos.filter(t => t.category === cat).length;
 
             return (

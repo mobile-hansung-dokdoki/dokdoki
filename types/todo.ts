@@ -1,5 +1,18 @@
-export type Category = '과제' | '업무' | '개인 루틴' | '학습' | '기타';
+export type Category = string;
 export type TodoStatus = '완료' | '진행' | '대기';
+
+export interface ScheduleSlot { date: string; time?: string }
+export type TodoSchedule =
+  | { mode: 'dates'; slots: ScheduleSlot[] }
+  | { mode: 'weekly'; start: string; end: string; weekdays: number[]; times: string[] };
+export interface TodoInput {
+  title: string;
+  category: Category;
+  date?: string;
+  time?: string;
+  memo?: string;
+  schedule?: TodoSchedule;
+}
 
 export interface Todo {
   id: string;
@@ -11,4 +24,6 @@ export interface Todo {
   done: boolean;
   createdAt: string;
   updatedAt: string;
+  schedule?: TodoSchedule;
+  scheduleId?: string;
 }

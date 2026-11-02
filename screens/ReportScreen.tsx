@@ -11,9 +11,9 @@ import { useTodosContext } from '../navigation/TodosContext';
 import { Category, Todo } from '../types';
 import { Colors, CategoryColors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
+import AchievementRing from '../components/AchievementRing';
 
 const BAR_MAX_HEIGHT = 80;
-const CATEGORIES: Category[] = ['과제', '업무', '개인 루틴', '학습', '기타'];
 
 type PeriodTab = '주간' | '월간' | '전체';
 const PERIOD_TABS: PeriodTab[] = ['주간', '월간', '전체'];
@@ -34,7 +34,7 @@ function calcStreak(todos: Todo[]): number {
 }
 
 export default function ReportScreen() {
-  const { todos } = useTodosContext();
+  const { todos, categories } = useTodosContext();
   const [activeTab, setActiveTab] = useState<PeriodTab>('주간');
 
   const { filteredTodos, completedCount, totalCount, achievementRate, inProgressCount, streak, dayData, categoryData, weekTotal, weekDone } = useMemo(() => {
@@ -69,7 +69,7 @@ export default function ReportScreen() {
       return { label, value: count };
     });
 
-    const cats = CATEGORIES.map(cat => ({
+    const cats = categories.map(cat => ({
       name: cat,
       done: filtered.filter(t => t.category === cat && t.done).length,
       total: filtered.filter(t => t.category === cat).length,
@@ -94,7 +94,7 @@ export default function ReportScreen() {
       weekTotal: weekF.length,
       weekDone: weekF.filter(t => t.done).length,
     };
-  }, [todos, activeTab]);
+  }, [todos, activeTab, categories]);
 
   const maxDayValue = Math.max(...dayData.map(d => d.value), 1);
 
@@ -132,14 +132,14 @@ export default function ReportScreen() {
 
         {/* 달성률 도넛 카드 */}
         <View style={styles.donutCard}>
-          <View style={styles.donutOuter}>
+          <AchievementRing percent={achievementRate} size={140} strokeWidth={14}>
             <View style={styles.donutInner}>
               <Text style={styles.donutPercent}>{achievementRate}%</Text>
               <Text style={styles.donutCaption}>
                 {activeTab === '주간' ? '이번 주 달성률' : activeTab === '월간' ? '이번 달 달성률' : '전체 달성률'}
               </Text>
             </View>
-          </View>
+          </AchievementRing>
           <View style={styles.legendWrap}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
@@ -269,11 +269,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     alignItems: 'center',
     gap: 24,
-  },
-  donutOuter: {
-    width: 140, height: 140, borderRadius: 70,
-    borderWidth: 14, borderColor: Colors.blue,
-    alignItems: 'center', justifyContent: 'center',
   },
   donutInner: { alignItems: 'center', gap: 4 },
   donutPercent: { fontSize: 32, fontWeight: '700', color: Colors.primary },

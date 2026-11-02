@@ -9,7 +9,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTodosContext } from '../navigation/TodosContext';
+import { useProfile } from '../navigation/ProfileContext';
+import ProfileAvatar from '../components/ProfileAvatar';
 import { Todo } from '../types';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
@@ -32,13 +36,12 @@ type SettingItem = {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   right?: string;
-  action: 'report' | 'wip';
+  action: 'notifications' | 'wip';
 };
 
 const SETTING_ITEMS: SettingItem[] = [
-  { icon: 'notifications-outline', label: '알림 설정',   action: 'wip' },
+  { icon: 'notifications-outline', label: '알림 설정',   action: 'notifications' },
   { icon: 'cloud-outline',          label: '동기화 설정', action: 'wip' },
-  { icon: 'bar-chart-outline',      label: '생산성 리포트', action: 'report' },
   { icon: 'flag-outline',           label: '목표 설정',  action: 'wip' },
 ];
 
@@ -49,7 +52,8 @@ const INFO_ITEMS: SettingItem[] = [
 ];
 
 export default function ProfileScreen() {
-  const navigation = useNavigation<any>();
+  const { profile } = useProfile();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { todos } = useTodosContext();
   const [toastVisible, setToastVisible] = useState(false);
 
@@ -60,26 +64,29 @@ export default function ProfileScreen() {
   }), [todos]);
 
   const handleItemPress = (action: SettingItem['action']) => {
-    if (action === 'report') {
-      navigation.navigate('Tabs', { screen: 'Report' });
-    } else {
-      setToastVisible(true);
-    }
+    if (action === 'notifications') navigation.navigate('NotificationSettings');
+    else setToastVisible(true);
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 상단 프로필 카드 */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>나</Text>
-          </View>
+        <TouchableOpacity
+          style={styles.profileCard}
+          accessibilityRole="button"
+          accessibilityLabel="나의 프로필 열기"
+          onPress={() => navigation.navigate('ProfileDetail')}
+          activeOpacity={0.7}
+        >
+          <ProfileAvatar profile={profile} size={56} />
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>나의 프로필</Text>
-            <Text style={styles.profileSub}>할 일을 꾸준히 관리하고 있어요 ✨</Text>
+            <Text style={styles.profileName}>{profile.nickname}</Text>
+            <Text style={styles.profileSub}>{profile.motto}</Text>
+            <Text style={styles.profileHint}>프로필 설정에서 변경할 수 있어요.</Text>
           </View>
-        </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
+        </TouchableOpacity>
 
         {/* 통계 요약 행 */}
         <View style={styles.statsCard}>
@@ -106,6 +113,8 @@ export default function ProfileScreen() {
             <TouchableOpacity
               key={item.label}
               style={[styles.menuRow, idx < SETTING_ITEMS.length - 1 && styles.menuRowBorder]}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
               activeOpacity={0.7}
               onPress={() => handleItemPress(item.action)}
             >
@@ -164,18 +173,10 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 16,
   },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
-  profileInfo: { gap: 4 },
+  profileInfo: { flex: 1, gap: 4 },
   profileName: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   profileSub: { fontSize: 13, color: Colors.textSecondary },
+  profileHint: { fontSize: 11, color: Colors.textTertiary },
   statsCard: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,

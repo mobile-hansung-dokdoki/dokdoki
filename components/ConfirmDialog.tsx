@@ -8,11 +8,13 @@ interface Props {
   visible: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  description?: string;
+  title?: string;
 }
 
-export default function ConfirmDialog({ visible, onCancel, onConfirm }: Props) {
+export default function ConfirmDialog({ visible, onCancel, onConfirm, description, title }: Props) {
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.overlay} />
       </TouchableWithoutFeedback>
@@ -21,8 +23,8 @@ export default function ConfirmDialog({ visible, onCancel, onConfirm }: Props) {
           <View style={styles.iconWrap}>
             <Ionicons name="trash" size={24} color={Colors.red} />
           </View>
-          <Text style={styles.title}>할 일을 삭제할까요?</Text>
-          <Text style={styles.desc}>삭제한 할 일은 복구할 수 없어요.</Text>
+          <Text style={styles.title}>{title ?? '할 일을 삭제할까요?'}</Text>
+          <Text style={styles.desc}>{description ?? '삭제한 할 일은 복구할 수 없어요.'}</Text>
           <View style={styles.buttons}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.8}>
               <Text style={styles.cancelText}>취소</Text>

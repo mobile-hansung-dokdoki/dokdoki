@@ -28,8 +28,6 @@ type OcrItem = {
   checked: boolean;
 };
 
-const CATEGORIES: Category[] = ['과제', '업무', '개인 루틴', '학습', '기타'];
-
 const MOCK_OCR_ITEMS: OcrItem[] = [
   { id: '1', text: '과제 제출하기',       category: '과제',    checked: true },
   { id: '2', text: '우유 사기',           category: '개인 루틴', checked: true },
@@ -38,7 +36,7 @@ const MOCK_OCR_ITEMS: OcrItem[] = [
 
 export default function OcrResultScreen() {
   const navigation = useNavigation<OcrResultNavProp>();
-  const { addTodo } = useTodosContext();
+  const { addTodo, categories } = useTodosContext();
   const [items, setItems] = useState<OcrItem[]>(MOCK_OCR_ITEMS);
   const [categoryPickerFor, setCategoryPickerFor] = useState<string | null>(null);
 
@@ -121,7 +119,7 @@ export default function OcrResultScreen() {
 
         <View style={styles.itemList}>
           {items.map(item => {
-            const catColor = CategoryColors[item.category];
+            const catColor = CategoryColors[item.category] ?? CategoryColors['기타'];
             return (
               <View key={item.id} style={styles.itemRow}>
                 {/* 체크박스 */}
@@ -163,8 +161,8 @@ export default function OcrResultScreen() {
                 {/* 카테고리 선택기 */}
                 {categoryPickerFor === item.id && (
                   <View style={styles.categoryPicker}>
-                    {CATEGORIES.map(cat => {
-                      const cc = CategoryColors[cat];
+                    {categories.map(cat => {
+                      const cc = CategoryColors[cat] ?? CategoryColors['기타'];
                       return (
                         <TouchableOpacity
                           key={cat}

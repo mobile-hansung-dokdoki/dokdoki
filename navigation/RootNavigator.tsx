@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { NavigationContainer, useNavigation, NavigatorScreenParams } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,14 +11,25 @@ import TodoFormScreen from '../screens/TodoFormScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import ReportScreen from '../screens/ReportScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ProfileDetailScreen from '../screens/ProfileDetailScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import SearchScreen from '../screens/SearchScreen';
 import CategoryListScreen from '../screens/CategoryListScreen';
 import CategoryDetailScreen from '../screens/CategoryDetailScreen';
 import OcrIntroScreen from '../screens/OcrIntroScreen';
 import OcrResultScreen from '../screens/OcrResultScreen';
 
+export type TabParamList = {
+  Home: undefined;
+  Calendar: undefined;
+  Report: undefined;
+  Profile: undefined;
+};
+
 export type RootStackParamList = {
-  Tabs: undefined;
+  Tabs: NavigatorScreenParams<TabParamList> | undefined;
+  ProfileDetail: undefined;
+  NotificationSettings: undefined;
   TodoForm: { todo?: Todo };
   Home: undefined;
   Report: undefined;
@@ -30,7 +41,7 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 function TabNavigator() {
   const navigation = useNavigation<any>();
@@ -130,6 +141,8 @@ export default function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={TabNavigator} />
+        <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} />
+        <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
         <Stack.Screen name="TodoForm" component={TodoFormScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="CategoryList" component={CategoryListScreen} />

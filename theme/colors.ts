@@ -13,13 +13,13 @@ export const Colors = {
   overlay:        'rgba(0,0,0,0.45)',
 } as const;
 
-export const CategoryColors: Record<string, { color: string; bg: string }> = {
+export const CategoryColors: Record<string, { color: string; bg: string }> = Object.assign(Object.create(null), {
   '과제':     { color: '#1C2A3A', bg: '#E8EBF0' },
   '업무':     { color: '#3B82F6', bg: '#DBEAFE' },
   '개인 루틴': { color: '#F59E0B', bg: '#FEF3C7' },
   '학습':     { color: '#22C55E', bg: '#DCFCE7' },
   '기타':     { color: '#6B7280', bg: '#F3F4F6' },
-};
+});
 
 export const StatusColors = {
   완료: { bg: '#DCFCE7', text: '#16A34A' },
