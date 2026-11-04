@@ -20,7 +20,22 @@ export async function pickProfilePhoto(): Promise<string | undefined> {
     mediaTypes: ['images'],
     allowsEditing: true,
     aspect: [1, 1],
-    quality: 0.8,
+    quality: 0.5,
+    base64: true,
   });
-  return result.canceled ? undefined : result.assets[0].uri;
+  if (result.canceled) return undefined;
+  const asset = result.assets[0];
+  const { Platform } = await import('react-native');
+  if (Platform.OS === 'web') {
+    if (!asset.base64) throw new Error('사진을 저장할 수 없어요.');
+    if (asset.base64.length > 2_000_000) throw new Error('더 작은 사진을 선택해 주세요.');
+    return `data:${asset.mimeType ?? 'image/jpeg'};base64,${asset.base64}`;
+  }
+  const { File, Directory, Paths } = await import('expo-file-system');
+  const folder = new Directory(Paths.document, 'profile-photos');
+  folder.create({ idempotent: true, intermediates: true });
+  const extension = asset.mimeType === 'image/png' ? 'png' : 'jpg';
+  const destination = new File(folder, `profile-${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`);
+  new File(asset.uri).copy(destination);
+  return destination.uri;
 }

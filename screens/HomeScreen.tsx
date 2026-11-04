@@ -1,3 +1,4 @@
+import { toDateString } from '../utils/date';
 import React, { useState, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -20,22 +21,19 @@ import EmptyState from '../components/EmptyState';
 import Toast from '../components/Toast';
 import { RootStackParamList } from '../navigation/RootNavigator';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const { profile } = useProfile();
   const navigation = useNavigation<HomeNavProp>();
-  const { todos, todayTodos, doneCount, toggleTodo, deleteTodo, getTodoStatus, categories } = useTodosContext();
+  const { todos, todayTodos, doneCount, toggleTodo, deleteTodo, getTodoStatus, categories, now } = useTodosContext();
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [toast, setToast] = useState(false);
   // 실제 동기화 연결 전에는 완료 상태로 표시하지 않습니다.
   const isSynced = false;
 
-  const filtered = (activeCategory
+  const filtered = (activeCategory && categories.includes(activeCategory)
     ? todayTodos.filter(t => t.category === activeCategory)
     : todayTodos
   ).sort((a, b) => {
@@ -64,23 +62,22 @@ export default function HomeScreen() {
 
   // 주간 통계 계산
   const { achievementRate, completedCount, totalCount, streak, weekDone, weekTotal } = useMemo(() => {
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    const today = toDateString(now);
     const diff = now.getDay() === 0 ? 6 : now.getDay() - 1;
     const mon = new Date(now);
     mon.setDate(now.getDate() - diff);
-    const weekStart = mon.toISOString().split('T')[0];
+    const weekStart = toDateString(mon);
 
     const weekTodos = todos.filter(t => t.date && t.date >= weekStart && t.date <= today);
     const wDone = weekTodos.filter(t => t.done).length;
     const wTotal = weekTodos.length;
     const rate = wTotal > 0 ? Math.round(wDone / wTotal * 100) : 0;
 
-    const doneDates = new Set(todos.filter(t => t.done && t.date).map(t => t.date!));
+    const doneDates = new Set(todos.filter(t => t.done && (t.completedAt || t.date)).map(t => t.completedAt ? toDateString(new Date(t.completedAt)) : t.date!));
     let s = 0;
     const d = new Date(now);
     for (let i = 0; i < 365; i++) {
-      const str = d.toISOString().split('T')[0];
+      const str = toDateString(d);
       if (doneDates.has(str)) { s++; d.setDate(d.getDate() - 1); }
       else if (i === 0) { d.setDate(d.getDate() - 1); }
       else break;
@@ -94,7 +91,7 @@ export default function HomeScreen() {
       weekDone: wDone,
       weekTotal: wTotal,
     };
-  }, [todos]);
+  }, [todos, now]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -102,7 +99,7 @@ export default function HomeScreen() {
       <View style={styles.topBar}>
         <SyncStatusBadge synced={isSynced} />
         <View style={styles.topRight}>
-          <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={() => navigation.navigate('NotificationSettings')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="notifications-outline" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity
@@ -123,7 +120,7 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>오늘도 집중하는 멋진 하루! ✨</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.monthCount}>
-              이번 달 할 일 <Text style={styles.countNum}>{todos.length}</Text>
+              이번 달 할 일 <Text style={styles.countNum}>{todos.filter(t => t.date?.startsWith(toDateString(now).slice(0, 7))).length}</Text>
             </Text>
             <SyncStatusBadge synced={isSynced} />
           </View>

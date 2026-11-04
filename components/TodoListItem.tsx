@@ -21,7 +21,7 @@ export default function TodoListItem({ todo, onToggle, onEdit, onDelete, getTodo
   const handleMore = () => {
     Alert.alert(todo.title, undefined, [
       { text: '수정', onPress: () => onEdit(todo) },
-      { text: '삭제', style: 'destructive', onPress: () => onDelete(todo.id) },
+      { text: todo.scheduleId ? '이 회차만 삭제' : '삭제', style: 'destructive', onPress: () => onDelete(todo.id) },
       { text: '취소', style: 'cancel' },
     ]);
   };

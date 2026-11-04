@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
+  TextInput,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -14,7 +15,7 @@ import { useTodosContext } from '../navigation/TodosContext';
 import { Category } from '../types';
 import { Colors, CategoryColors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
-import Toast from '../components/Toast';
+
 import { RootStackParamList } from '../navigation/RootNavigator';
 
 type CategoryListNavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -34,8 +35,14 @@ const CATEGORY_META: Record<Category, CategoryMeta> = Object.assign(Object.creat
 
 export default function CategoryListScreen() {
   const navigation = useNavigation<CategoryListNavProp>();
-  const { todos, categories } = useTodosContext();
-  const [toastVisible, setToastVisible] = useState(false);
+  const { todos, categories, addCategory } = useTodosContext();
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const saveCategory = () => {
+    try { addCategory(name); setAdding(false); setName(''); setError(''); }
+    catch (e) { setError((e as Error).message); }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -82,7 +89,7 @@ export default function CategoryListScreen() {
           {/* 카테고리 추가 카드 */}
           <TouchableOpacity
             style={[styles.card, styles.addCard]}
-            onPress={() => setToastVisible(true)}
+            onPress={() => setAdding(true)}
             activeOpacity={0.7}
           >
             <View style={[styles.iconCircle, { backgroundColor: Colors.background }]}>
@@ -92,16 +99,18 @@ export default function CategoryListScreen() {
               <Text style={styles.addCardText}>카테고리 추가</Text>
             </View>
           </TouchableOpacity>
+          {adding && <View style={[styles.card, { flexDirection: 'column', alignItems: 'stretch', gap: 12 }]}>
+            <TextInput accessibilityLabel="새 카테고리 이름" placeholder="새 카테고리 이름" value={name} onChangeText={v => { setName(v); setError(''); }} onSubmitEditing={saveCategory} autoFocus style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: 8, padding: 12 }} />
+            {!!error && <Text accessibilityRole="alert" style={{ color: Colors.red }}>{error}</Text>}
+            <TouchableOpacity onPress={saveCategory} style={{ padding: 12 }}><Text>추가</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => { setAdding(false); setName(''); setError(''); }} style={{ padding: 12 }}><Text>취소</Text></TouchableOpacity>
+          </View>}
         </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      <Toast
-        message="준비 중이에요."
-        visible={toastVisible}
-        onHide={() => setToastVisible(false)}
-      />
+
     </SafeAreaView>
   );
 }

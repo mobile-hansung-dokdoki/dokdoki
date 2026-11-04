@@ -75,7 +75,7 @@ export default function OcrIntroScreen() {
         </View>
 
         <PrimaryButton
-          label="카메라 열기"
+          label="예시 결과 살펴보기"
           onPress={() => setPermissionDialogVisible(true)}
         />
       </View>
@@ -85,9 +85,9 @@ export default function OcrIntroScreen() {
         <View style={styles.dimOverlay}>
           <View style={styles.dialog}>
             <Ionicons name="camera-outline" size={28} color={Colors.primary} />
-            <Text style={styles.dialogTitle}>카메라 접근을 허용할까요?</Text>
+            <Text style={styles.dialogTitle}>OCR 예시 화면을 열까요?</Text>
             <Text style={styles.dialogDesc}>
-              종이 메모를 촬영해 할 일을 인식하려면{'\n'}카메라 권한이 필요해요.
+              실제 촬영·글자 인식은 아직 연결되지 않았어요.{'\n'}예시 결과를 편집하고 저장할 수 있어요.
             </Text>
             <View style={styles.btnRow}>
               <TouchableOpacity
@@ -105,7 +105,7 @@ export default function OcrIntroScreen() {
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.primaryBtnText}>허용</Text>
+                <Text style={styles.primaryBtnText}>예시 보기</Text>
               </TouchableOpacity>
             </View>
           </View>

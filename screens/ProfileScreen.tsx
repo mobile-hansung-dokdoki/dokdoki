@@ -1,3 +1,4 @@
+import { toDateString } from '../utils/date';
 import React, { useState, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -20,11 +21,11 @@ import { Spacing } from '../theme/spacing';
 import Toast from '../components/Toast';
 
 function calcStreak(todos: Todo[]): number {
-  const doneDates = new Set(todos.filter(t => t.done && t.date).map(t => t.date!));
+  const doneDates = new Set(todos.filter(t => t.done && (t.completedAt || t.date)).map(t => t.completedAt ? toDateString(new Date(t.completedAt)) : t.date!));
   let s = 0;
   const d = new Date();
   for (let i = 0; i < 365; i++) {
-    const str = d.toISOString().split('T')[0];
+    const str = toDateString(d);
     if (doneDates.has(str)) { s++; d.setDate(d.getDate() - 1); }
     else if (i === 0) { d.setDate(d.getDate() - 1); }
     else break;
@@ -54,14 +55,14 @@ const INFO_ITEMS: SettingItem[] = [
 export default function ProfileScreen() {
   const { profile } = useProfile();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { todos } = useTodosContext();
+  const { todos, now } = useTodosContext();
   const [toastVisible, setToastVisible] = useState(false);
 
   const { totalCount, doneCount, streak } = useMemo(() => ({
     totalCount: todos.length,
     doneCount: todos.filter(t => t.done).length,
     streak: calcStreak(todos),
-  }), [todos]);
+  }), [todos, now]);
 
   const handleItemPress = (action: SettingItem['action']) => {
     if (action === 'notifications') navigation.navigate('NotificationSettings');

@@ -55,10 +55,27 @@ test('empty and overlong nicknames are rejected', () => {
   assert.equal(normalizeProfile({ nickname: '가'.repeat(20) }).nickname.length, 20);
 });
 
-test('photo selection opens the image library with square editing and returns the device URI', async () => {
+test('photo selection copies the selected image from cache into permanent app documents', async () => {
   pickerError = undefined;
   pickerResult = { canceled: false, assets: [{ uri: 'file:///selected.jpg' }] };
-  assert.equal(await pickProfilePhoto(), 'file:///selected.jpg');
+  let copied;
+  Module._load = function(name, parent, isMain) {
+    if (name === 'react-native') return { Platform: { OS: 'android' } };
+    if (name === 'expo-file-system') return {
+      Paths: { document: 'file:///documents' },
+      Directory: class { constructor(...parts) { this.uri = parts.join('/'); } create() {} },
+      File: class {
+        constructor(parent, name) { this.uri = name ? `${parent.uri}/${name}` : parent; }
+        copy(destination) { copied = [this.uri, destination.uri]; }
+      },
+    };
+    return originalLoad.call(this,name,parent,isMain);
+  };
+  try {
+    const uri = await pickProfilePhoto();
+    assert.match(uri, /^file:\/\/\/documents\/profile-photos\/profile-.+\.jpg$/);
+    assert.deepEqual(copied, ['file:///selected.jpg', uri]);
+  } finally { Module._load = originalLoad; }
   assert.deepEqual(pickerOptions.mediaTypes, ['images']);
   assert.equal(pickerOptions.allowsEditing, true);
   assert.deepEqual(pickerOptions.aspect, [1, 1]);
