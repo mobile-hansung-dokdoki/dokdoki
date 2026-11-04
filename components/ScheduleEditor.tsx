@@ -64,6 +64,7 @@ export default function ScheduleEditor({ value, onChange }: { value: TodoSchedul
       </View>)}
       <TouchableOpacity style={styles.add} onPress={() => updateDates([...dates, { date: addDays(dates[dates.length - 1].date, 1), time: dates[dates.length - 1].time }])}><Text style={styles.addText}>+ 다른 날짜·시간 추가</Text></TouchableOpacity>
     </> : <>
+      {!!weekly.excluded?.length && <Text style={styles.help}>개별 삭제한 {weekly.excluded.length}개 회차는 제외돼요.</Text>}
       <Text style={styles.help}>선택한 기간 동안 매주 반복해요. 기간은 최대 1년이에요.</Text>
       <View style={styles.card}>
         <DateTimeField label="반복 시작일" mode="date" value={weekly.start} onChange={start => updateWeekly({ start })} />

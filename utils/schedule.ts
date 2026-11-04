@@ -35,6 +35,9 @@ export function expandSchedule(schedule: TodoSchedule): ScheduleSlot[] {
       }
     }
   }
+  if (schedule.mode === 'weekly' && schedule.excluded) {
+    slots = slots.filter(slot => !schedule.excluded!.some(ex => ex.date === slot.date && ex.time === slot.time));
+  }
   if (slots.some(slot => !validDate(slot.date) || (slot.time !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(slot.time)))) {
     throw new Error('날짜와 시간을 올바르게 선택해 주세요.');
   }
@@ -54,7 +57,7 @@ export function buildTodos(input: TodoInput, previous: Todo[] = []): Todo[] {
     const existing = previous.find(todo => todo.date === slot.date && (todo.time ? normalizeTime(todo.time) : undefined) === slot.time);
     return {
       ...input, ...slot, id: existing?.id ?? newId(), title: input.title.trim(),
-      scheduleId, done: existing?.done ?? false,
+      scheduleId, done: existing?.done ?? false, completedAt: existing?.completedAt,
       createdAt: existing?.createdAt ?? now, updatedAt: now,
     };
   });
@@ -65,4 +68,16 @@ export function replaceSchedule(todos: Todo[], id: string, input: TodoInput): To
   if (!target) return todos;
   const belongs = (todo: Todo) => target.scheduleId ? todo.scheduleId === target.scheduleId : todo.id === id;
   return [...buildTodos(input, todos.filter(belongs)), ...todos.filter(todo => !belongs(todo))];
+}
+
+
+export function removeOccurrence(todos: Todo[], id: string): Todo[] {
+  const target = todos.find(t => t.id === id);
+  if (!target?.scheduleId || !target.schedule || !target.date) return todos.filter(t => t.id !== id);
+  const slot = { date: target.date, time: target.time };
+  const schedule: TodoSchedule = target.schedule.mode === 'dates'
+    ? { mode: 'dates', slots: target.schedule.slots.filter(s => s.date !== slot.date || s.time !== slot.time) }
+    : { ...target.schedule, excluded: [...(target.schedule.excluded ?? []), slot] };
+  return todos.filter(t => t.id !== id).map(t => t.scheduleId === target.scheduleId
+    ? { ...t, schedule, updatedAt: new Date().toISOString() } : t);
 }

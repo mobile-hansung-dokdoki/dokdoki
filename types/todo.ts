@@ -4,7 +4,7 @@ export type TodoStatus = '완료' | '진행' | '대기';
 export interface ScheduleSlot { date: string; time?: string }
 export type TodoSchedule =
   | { mode: 'dates'; slots: ScheduleSlot[] }
-  | { mode: 'weekly'; start: string; end: string; weekdays: number[]; times: string[] };
+  | { mode: 'weekly'; excluded?: ScheduleSlot[]; start: string; end: string; weekdays: number[]; times: string[] };
 export interface TodoInput {
   title: string;
   category: Category;
@@ -22,6 +22,7 @@ export interface Todo {
   time?: string;      // '오전 10:00'
   category: Category;
   done: boolean;
+  completedAt?: string;
   createdAt: string;
   updatedAt: string;
   schedule?: TodoSchedule;

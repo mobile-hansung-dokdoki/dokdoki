@@ -1,3 +1,4 @@
+import { toDateString } from '../utils/date';
 import React, { useState, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -21,11 +22,11 @@ const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 const DAY_MAP = [1, 2, 3, 4, 5, 6, 0]; // label index → getDay()
 
 function calcStreak(todos: Todo[]): number {
-  const doneDates = new Set(todos.filter(t => t.done && t.date).map(t => t.date!));
+  const doneDates = new Set(todos.filter(t => t.done && (t.completedAt || t.date)).map(t => t.completedAt ? toDateString(new Date(t.completedAt)) : t.date!));
   let s = 0;
   const d = new Date();
   for (let i = 0; i < 365; i++) {
-    const str = d.toISOString().split('T')[0];
+    const str = toDateString(d);
     if (doneDates.has(str)) { s++; d.setDate(d.getDate() - 1); }
     else if (i === 0) { d.setDate(d.getDate() - 1); }
     else break;
@@ -34,19 +35,18 @@ function calcStreak(todos: Todo[]): number {
 }
 
 export default function ReportScreen() {
-  const { todos, categories } = useTodosContext();
+  const { todos, categories, now, getTodoStatus } = useTodosContext();
   const [activeTab, setActiveTab] = useState<PeriodTab>('주간');
 
   const { filteredTodos, completedCount, totalCount, achievementRate, inProgressCount, streak, dayData, categoryData, weekTotal, weekDone } = useMemo(() => {
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    const today = toDateString(now);
 
     let filtered: Todo[];
     if (activeTab === '주간') {
       const diff = now.getDay() === 0 ? 6 : now.getDay() - 1;
       const mon = new Date(now);
       mon.setDate(now.getDate() - diff);
-      const weekStart = mon.toISOString().split('T')[0];
+      const weekStart = toDateString(mon);
       filtered = todos.filter(t => !t.date || (t.date >= weekStart && t.date <= today));
     } else if (activeTab === '월간') {
       const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
@@ -58,7 +58,7 @@ export default function ReportScreen() {
     const done = filtered.filter(t => t.done).length;
     const total = filtered.length;
     const rate = total > 0 ? Math.round(done / total * 100) : 0;
-    const inProg = filtered.filter(t => !t.done && t.time).length;
+    const inProg = filtered.filter(t => getTodoStatus(t) === '진행').length;
 
     const days = DAY_LABELS.map((label, i) => {
       const target = DAY_MAP[i];
@@ -79,7 +79,7 @@ export default function ReportScreen() {
     const wDiff = now.getDay() === 0 ? 6 : now.getDay() - 1;
     const wMon = new Date(now);
     wMon.setDate(now.getDate() - wDiff);
-    const wStart = wMon.toISOString().split('T')[0];
+    const wStart = toDateString(wMon);
     const weekF = todos.filter(t => t.date && t.date >= wStart && t.date <= today);
 
     return {
@@ -94,7 +94,7 @@ export default function ReportScreen() {
       weekTotal: weekF.length,
       weekDone: weekF.filter(t => t.done).length,
     };
-  }, [todos, activeTab, categories]);
+  }, [todos, activeTab, categories, now]);
 
   const maxDayValue = Math.max(...dayData.map(d => d.value), 1);
 
@@ -175,10 +175,10 @@ export default function ReportScreen() {
           </View>
         </View>
 
-        {/* 요일별 완료 추이 */}
+        {/* 예정 요일별 완료 현황 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>요일별 완료 추이</Text>
+            <Text style={styles.sectionTitle}>예정 요일별 완료 현황</Text>
             <Text style={styles.sectionBadge}>총 완료 {completedCount}건</Text>
           </View>
           <View style={styles.barChartWrap}>

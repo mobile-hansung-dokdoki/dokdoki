@@ -100,13 +100,13 @@ export default function OcrResultScreen() {
         <View style={styles.ocrInfoCard}>
           <View style={styles.ocrInfoHeader}>
             <View style={styles.ocrBadge}>
-              <Text style={styles.ocrBadgeText}>ON-DEVICE OCR</Text>
+              <Text style={styles.ocrBadgeText}>OCR 데모</Text>
             </View>
-            <Text style={styles.ocrStatus}>오프라인에서도 인식 중</Text>
+            <Text style={styles.ocrStatus}>실제 인식 기능 준비 중</Text>
           </View>
           <View style={styles.ocrProgressRow}>
-            <Text style={styles.ocrProgressText}>기기에서 글자를 읽고 있어요.</Text>
-            <Text style={styles.ocrTime}>1.8초</Text>
+            <Text style={styles.ocrProgressText}>예시 항목을 편집해 볼 수 있어요.</Text>
+            <Text style={styles.ocrTime}>예시</Text>
           </View>
           {/* 진행바 (완료) */}
           <View style={styles.progressBarBg}>
