@@ -5,7 +5,7 @@ import { useTodosContext } from '../navigation/TodosContext';
 import { useProfile } from '../navigation/ProfileContext';
 
 export default function StorageGate({ children }: { children: React.ReactNode }) {
-  const { storage: todos } = useTodosContext();
+  const { storage: todos, sync } = useTodosContext();
   const { storage: profile } = useProfile();
   const loaded = todos.loaded && profile.loaded;
   const error = todos.error || profile.error;
@@ -17,6 +17,7 @@ export default function StorageGate({ children }: { children: React.ReactNode })
     {children}
     <SafeAreaView edges={['bottom']} style={styles.status}>
       {error ? <><Text accessibilityRole="alert" style={styles.text}>{error}</Text><TouchableOpacity onPress={retry} style={styles.button}><Text>저장 다시 시도</Text></TouchableOpacity></> : <Text accessibilityLiveRegion="polite">{todos.saving || profile.saving ? '기기에 저장 중…' : '기기에 저장됨'}</Text>}
+      {sync.error ? <Text style={styles.syncText}>{sync.error}</Text> : null}
     </SafeAreaView>
   </View>;
 }
@@ -24,5 +25,6 @@ const styles = StyleSheet.create({
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 16 },
   status: { padding: 8, alignItems: 'center', backgroundColor: '#F1F5F9', gap: 4 },
   text: { textAlign: 'center', color: '#9F1239' },
+  syncText: { textAlign: 'center', color: '#6B7280', fontSize: 11 },
   button: { backgroundColor: '#DBEAFE', padding: 12, borderRadius: 8 },
 });

@@ -1,10 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '../theme/colors';
+import type { CloudSyncStatus } from '../hooks/useTodos';
 
-export default function SyncStatusBadge({ synced }: { synced: boolean }) {
-  const label = synced ? '동기화' : '비 동기화';
-  const color = synced ? Colors.green : Colors.red;
+const STATUS: Record<CloudSyncStatus, { label: string; color: string }> = {
+  offline: { label: '오프라인 · 기기에 저장됨', color: Colors.amber },
+  syncing: { label: '동기화 중', color: Colors.blue },
+  synced: { label: '동기화 완료', color: Colors.green },
+  error: { label: '동기화 확인 필요', color: Colors.red },
+};
+
+export default function SyncStatusBadge({ status = 'offline', synced }: { status?: CloudSyncStatus; synced?: boolean }) {
+  const view = synced === undefined ? STATUS[status] : (synced ? STATUS.synced : STATUS.offline);
+  const { label, color } = view;
 
   return (
     <View
