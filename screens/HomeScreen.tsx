@@ -2,7 +2,7 @@ import { toDateString } from '../utils/date';
 import React, { useState, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, RefreshControl,
   StyleSheet, LayoutAnimation, Platform, UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,12 +27,9 @@ type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
 export default function HomeScreen() {
   const { profile } = useProfile();
   const navigation = useNavigation<HomeNavProp>();
-  const { todos, todayTodos, doneCount, toggleTodo, deleteTodo, getTodoStatus, categories, now } = useTodosContext();
+  const { todos, todayTodos, doneCount, toggleTodo, deleteTodo, getTodoStatus, categories, now, sync } = useTodosContext();
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [toast, setToast] = useState(false);
-  // 실제 동기화 연결 전에는 완료 상태로 표시하지 않습니다.
-  const isSynced = false;
-
   const filtered = (activeCategory && categories.includes(activeCategory)
     ? todayTodos.filter(t => t.category === activeCategory)
     : todayTodos
@@ -97,7 +94,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       {/* 상단 바 */}
       <View style={styles.topBar}>
-        <SyncStatusBadge synced={isSynced} />
+        <SyncStatusBadge status={sync.status} />
         <View style={styles.topRight}>
           <TouchableOpacity onPress={() => navigation.navigate('NotificationSettings')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="notifications-outline" size={22} color={Colors.textPrimary} />
@@ -114,7 +111,11 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={sync.status === 'syncing'} onRefresh={sync.refresh} />}
+      >
         {/* 인사/요약 */}
         <View style={styles.summary}>
           <Text style={styles.greeting}>오늘도 집중하는 멋진 하루! ✨</Text>
@@ -122,7 +123,7 @@ export default function HomeScreen() {
             <Text style={styles.monthCount}>
               이번 달 할 일 <Text style={styles.countNum}>{todos.filter(t => t.date?.startsWith(toDateString(now).slice(0, 7))).length}</Text>
             </Text>
-            <SyncStatusBadge synced={isSynced} />
+            <SyncStatusBadge status={sync.status} />
           </View>
         </View>
 
