@@ -45,13 +45,17 @@ try {
   else delete require.extensions['.tsx'];
 }
 
-for (const [synced, label, color] of [
-  [true, '동기화', Colors.green],
-  [false, '비 동기화', Colors.red],
+for (const [props, label, color] of [
+  [{ status: 'synced' }, '동기화 완료', Colors.green],
+  [{ status: 'offline' }, '오프라인 · 기기에 저장됨', Colors.amber],
+  [{ status: 'syncing' }, '동기화 중', Colors.blue],
+  [{ status: 'error' }, '동기화 확인 필요', Colors.red],
+  [{ synced: true }, '동기화 완료', Colors.green],
+  [{ synced: false }, '오프라인 · 기기에 저장됨', Colors.amber],
 ]) {
-  test(`sync status renders ${label} with its corresponding color`, () => {
+  test(`sync status ${JSON.stringify(props)} renders ${label} with its corresponding color`, () => {
     renderedText.length = 0;
-    const content = renderToString(React.createElement(SyncStatusBadge, { synced }));
+    const content = renderToString(React.createElement(SyncStatusBadge, props));
     assert.equal(content, label);
     const style = Object.assign({}, ...renderedText[0].style);
     assert.equal(style.color, color);
