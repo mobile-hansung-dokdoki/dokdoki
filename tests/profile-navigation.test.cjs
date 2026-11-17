@@ -54,7 +54,7 @@ let HomeScreen, ProfileScreen, ProfileDetailScreen, TodosProvider, ProfileProvid
 try {
   require.extensions['.ts'] = compile;
   require.extensions['.tsx'] = compile;
-  // Only native platform and navigation boundaries are replaced; app components and state are real.
+  // Native storage/network and navigation use adapters; app components and state are real.
   Module._load = function (name, parent, isMain) {
     if (name === 'react-native') return native;
     if (name === 'react-native-safe-area-context') return { SafeAreaView: Container };
@@ -62,6 +62,14 @@ try {
     if (name === 'react-native-svg') return { __esModule: true, default: Container, Circle: () => null };
     if (name === '@react-navigation/native') return { useNavigation: () => navigation };
     if (name === 'expo-image-picker') return { launchImageLibraryAsync: async () => ({ canceled: true, assets: null }) };
+    if (name === 'expo-network') return {
+      getNetworkStateAsync: async () => ({ isConnected: false, isInternetReachable: false }),
+      addNetworkStateListener: () => ({ remove() {} }),
+    };
+    if (name === '@react-native-async-storage/async-storage') return {
+      getItem: async () => null, setItem: async () => {}, removeItem: async () => {},
+    };
+    if (name === 'react-native-url-polyfill/auto') return {};
     return originalLoad.call(this, name, parent, isMain);
   };
   HomeScreen = require('../screens/HomeScreen.tsx').default;
